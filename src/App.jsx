@@ -1,9 +1,11 @@
+import { Button } from "@/components/ui/button";
+
 function App() {
   return (
-    <h1 className="text-4xl font-bold text-red-500 p-10">
-      Tailwind is working
-    </h1>
-  )
+    <div className="min-h-screen flex items-center justify-center">
+      <Button className="bg-red-600">Click me</Button>
+    </div>
+  );
 }
 
-export default App
+export default App;
