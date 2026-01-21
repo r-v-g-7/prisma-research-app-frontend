@@ -1,8 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { BrowserRouter } from "react-router-dom";
-import Login from "./components/login";
+import Login from "./pages/Login";
 import Feed from "./components/Feed";
-import Register from "./components/Register";
+import Register from "./pages/Register";
 import Workspace from "./components/Workspace";
 import { Route } from "react-router-dom";
 import { Routes } from "react-router-dom";
