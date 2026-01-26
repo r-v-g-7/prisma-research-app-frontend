@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,18 +8,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { registerUser } from '@/services/auth';
 
 
 const Register = () => {
+
+  const nameRef = useRef(null);
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+  const fieldOfStudyRef = useRef(null);
+  const institutionRef = useRef(null);
+  const [role, setRole] = useState(null);
+
+
+  const handleSubmit = async () => {
+
+    const name = nameRef.current.value;
+    const email = emailRef.current.value;
+    const password = passwordRef.current.value;
+    const institution = institutionRef.current.value;
+    const fieldOfStudy = fieldOfStudyRef.current.value;
+
+    try {
+      await registerUser({ name, email, password, role, institution, fieldOfStudy })
+    } catch (err) {
+      console.error("Register Failed: ", err);
+    }
+
+  }
+
+
   return (
     <div>
       <h2>Register</h2>
 
-      <Input placeholder="Name" />
-      <Input type="email" placeholder="Email" />
-      <Input type="password" placeholder="Password" />
+      <Input placeholder="Name" ref={nameRef} />
+      <Input type="email" placeholder="Email" ref={emailRef} />
+      <Input type="password" placeholder="Password" ref={passwordRef} />
+      <Input type="text" placeholder="Institution" ref={institutionRef} />
+      <Input type="text" placeholder="Field of Study" ref={fieldOfStudyRef} />
 
-      <Select>
+      <Select onValueChange={setRole}>
         <SelectTrigger>
           <SelectValue placeholder="Select role" />
         </SelectTrigger>
@@ -29,7 +58,7 @@ const Register = () => {
         </SelectContent>
       </Select>
 
-      <Button>Submit</Button>
+      <Button onClick={handleSubmit}>Submit</Button>
     </div>
   );
 };
