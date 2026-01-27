@@ -1,20 +1,26 @@
-import React, { useRef } from 'react'
+import React, { useContext, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { loginUser } from '@/services/auth'
+import { AuthContext } from '@/context/AuthContext'
 
 const Login = () => {
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
-  const fieldOfStudyRef = useRef(null);
-  const institutionRef = useRef(null);
+
+  const { login } = useContext(AuthContext);
 
   const handleSubmit = async () => {
     const email = emailRef.current.value;
-    const password = emailRef.current.value;
+    const password = passwordRef.current.value;
+
     try {
       const response = await loginUser({ email, password });
-      console.log("Login Success: " + response);
+
+      const userInfo = response.data;
+      login(userInfo, null);
+
+      console.log("Login Success, user stored iin context");
     } catch (err) {
       console.error("Login Failed: ", err);
     }
@@ -25,8 +31,6 @@ const Login = () => {
       <h2>Login</h2>
       <Input type="email" placeholder="Email" ref={emailRef} />
       <Input type="password" placeholder="Password" ref={passwordRef} />
-      <Input type="text" placeholder="Institution" ref={institutionRef} />
-      <Input type="text" placeholder="Field of Study" ref={fieldOfStudyRef} />
       <Button onClick={handleSubmit}>Submit</Button>
     </div>
   )

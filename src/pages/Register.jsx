@@ -31,12 +31,12 @@ const Register = () => {
 
     try {
       await registerUser({ name, email, password, role, institution, fieldOfStudy })
+
     } catch (err) {
       console.error("Register Failed: ", err);
     }
 
   }
-
 
   return (
     <div>
