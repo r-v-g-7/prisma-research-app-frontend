@@ -1,6 +1,6 @@
 import { BrowserRouter } from "react-router-dom";
 import Login from "./pages/Login";
-import Feed from "./components/Feed";
+import Feed from "./pages/Feed";
 import Register from "./pages/Register";
 import Workspace from "./components/Workspace";
 import { Route } from "react-router-dom";

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { registerUser } from '@/services/auth';
-
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '@/context/AuthContext';
 
 const Register = () => {
 
@@ -18,7 +19,11 @@ const Register = () => {
   const passwordRef = useRef(null);
   const fieldOfStudyRef = useRef(null);
   const institutionRef = useRef(null);
+
   const [role, setRole] = useState(null);
+
+  const navigate = useNavigate();
+  const { login, user } = useContext(AuthContext);
 
 
   const handleSubmit = async () => {
@@ -30,13 +35,22 @@ const Register = () => {
     const fieldOfStudy = fieldOfStudyRef.current.value;
 
     try {
-      await registerUser({ name, email, password, role, institution, fieldOfStudy })
+      const response = await registerUser({ name, email, password, role, institution, fieldOfStudy });
 
+      login(response.data);
+      console.log("Registration successful");
     } catch (err) {
       console.error("Register Failed: ", err);
     }
-
   }
+
+  useEffect(() => {
+    if (user) {
+      navigate("/feed");
+    }
+
+  }, [user, navigate]);
+
 
   return (
     <div>
