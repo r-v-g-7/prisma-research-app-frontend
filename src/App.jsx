@@ -7,6 +7,7 @@ import { Route } from "react-router-dom";
 import { Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
+import MainLayout from "./layouts/MainLayout";
 
 function App() {
   return (
@@ -15,22 +16,28 @@ function App() {
         <Routes>
           <Route path='/login' element={<Login />} />
           <Route path='/register' element={<Register />} />
-          <Route
-            path='/feed'
-            element={
-              <ProtectedRoute>
+
+          <Route element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+          >
+            <Route
+              path='/feed'
+              element={
                 <Feed />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/workspace/:id'
-            element={
-              <ProtectedRoute>
+              }
+            />
+            <Route
+              path='/workspace/:id'
+              element={
                 <Workspace />
-              </ProtectedRoute>
-            }
-          />
+              }
+            />
+          </Route>
+
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>
