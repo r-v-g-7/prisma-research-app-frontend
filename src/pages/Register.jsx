@@ -53,26 +53,28 @@ const Register = () => {
 
 
   return (
-    <div>
-      <h2>Register</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md flex flex-col gap-4">
+        <h2 className="text-2xl font-semibold text-center">Register</h2>
 
-      <Input placeholder="Name" ref={nameRef} />
-      <Input type="email" placeholder="Email" ref={emailRef} />
-      <Input type="password" placeholder="Password" ref={passwordRef} />
-      <Input type="text" placeholder="Institution" ref={institutionRef} />
-      <Input type="text" placeholder="Field of Study" ref={fieldOfStudyRef} />
+        <Input placeholder="Name" ref={nameRef} />
+        <Input type="email" placeholder="Email" ref={emailRef} />
+        <Input type="password" placeholder="Password" ref={passwordRef} />
+        <Input placeholder="Institution" ref={institutionRef} />
+        <Input placeholder="Field of Study" ref={fieldOfStudyRef} />
 
-      <Select onValueChange={setRole}>
-        <SelectTrigger>
-          <SelectValue placeholder="Select role" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="student">Student</SelectItem>
-          <SelectItem value="professor">Professor</SelectItem>
-        </SelectContent>
-      </Select>
+        <Select onValueChange={setRole}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="student">Student</SelectItem>
+            <SelectItem value="professor">Professor</SelectItem>
+          </SelectContent>
+        </Select>
 
-      <Button onClick={handleSubmit}>Submit</Button>
+        <Button onClick={handleSubmit}>Register</Button>
+      </div>
     </div>
   );
 };

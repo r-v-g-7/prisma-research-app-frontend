@@ -38,11 +38,15 @@ const Login = () => {
   }, [user, navigate]);
 
   return (
-    <div>
-      <h2>Login</h2>
-      <Input type="email" placeholder="Email" ref={emailRef} />
-      <Input type="password" placeholder="Password" ref={passwordRef} />
-      <Button onClick={handleSubmit}>Submit</Button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md flex flex-col gap-4">
+        <h2 className="text-2xl font-semibold text-center">Login</h2>
+
+        <Input type="email" placeholder="Email" ref={emailRef} />
+        <Input type="password" placeholder="Password" ref={passwordRef} />
+
+        <Button onClick={handleSubmit}>Login</Button>
+      </div>
     </div>
   )
 }

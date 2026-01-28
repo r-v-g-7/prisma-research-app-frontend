@@ -1,41 +1,28 @@
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
-    const { logout } = useContext(AuthContext);
-    const handleLogout = () => {
-        logout();
-    }
+    const { user, logout } = useContext(AuthContext);
 
     return (
-        <nav className="h-14 border-b flex items-center justify-between px-6">
+        <nav className="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+            <div className="text-lg font-display font-bold text-gradient-primary bg-slate-900">Prism</div>
 
-            {/* App name */}
-            <div className="text-lg font-semibold">
-                Prism
-            </div>
-
-            {/* Navigation */}
-            <div className="flex items-center gap-4">
-                <Link to="/feed" className="text-sm">
-                    Feed
-                </Link>
-
-                <Link to="/workspace/1" className="text-sm">
-                    Workspaces
-                </Link>
-
-                <Link to="/profile" className="text-sm">
-                    Profile
-                </Link>
-
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                    Logout
-                </Button>
-            </div>
-
+            {user && (
+                <div className="flex items-center gap-4">
+                    <Link to="/feed" className="text-gray-700 hover:text-gray-900">
+                        Feed
+                    </Link>
+                    <Link to={`/workspace/${user.id}`} className="text-gray-700 hover:text-gray-900">
+                        Workspace
+                    </Link>
+                    <Button onClick={logout} className="bg-red-500 text-white hover:bg-red-600 px-3 py-1 text-sm">
+                        Logout
+                    </Button>
+                </div>
+            )}
         </nav>
     );
 };
