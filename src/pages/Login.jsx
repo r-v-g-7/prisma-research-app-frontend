@@ -12,6 +12,12 @@ const Login = () => {
 
   const { login, user } = useContext(AuthContext);
 
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate])
+
   const handleSubmit = async () => {
     const email = emailRef.current.value;
     const password = passwordRef.current.value;
