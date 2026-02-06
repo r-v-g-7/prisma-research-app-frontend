@@ -8,6 +8,7 @@ import { Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
+import PostDetail from "./pages/postDetail";
 
 function App() {
   return (
@@ -35,12 +36,21 @@ function App() {
                 <Workspace />
               }
             />
+            <Route
+              path='/post/:postId'
+              element={
+                <PostDetail />
+              }
+            />
           </Route>
+
+
+
 
 
         </Routes>
       </BrowserRouter>
-    </AuthProvider>
+    </AuthProvider >
   );
 }
 

@@ -31,6 +31,18 @@ const Login = () => {
     }
   }
 
+  const handleSubmitOfDevLogin = async () => {
+    try {
+      const email = "idk@gmail.com"
+      const password = "Chanchal@123"
+      const response = await loginUser({ email, password });
+      login(response.data);
+      console.log("Login Success, user stored in context");
+    } catch (err) {
+      console.error("Login Failed: ", err);
+    }
+  }
+
   useEffect(() => {
     if (user) {
       navigate("/feed");
@@ -46,6 +58,7 @@ const Login = () => {
         <Input type="password" placeholder="Password" ref={passwordRef} />
 
         <Button onClick={handleSubmit}>Login</Button>
+        <Button onClick={handleSubmitOfDevLogin}>Dev Login</Button>
       </div>
     </div>
   )
