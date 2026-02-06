@@ -1,9 +1,24 @@
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import PostCard from "@/components/PostCard";
+import { useState } from "react";
+import { useEffect } from "react";
+import { fetchPosts } from "@/services/post";
 
 const Feed = () => {
     const { user, logout } = useContext(AuthContext);
+    const [posts, setPosts] = useState([]);
+
+    useEffect(() => {
+        const loadPosts = async () => {
+            const data = await fetchPosts();
+            setPosts(data.data);
+            console.log(data.data);
+        }
+        loadPosts();
+    }, []);
+
 
     return (
         <div className="max-w-4xl mx-auto bg-white shadow-md rounded-lg p-6 flex flex-col gap-4">
@@ -17,6 +32,9 @@ const Feed = () => {
             >
                 Logout
             </Button>
+            {posts && posts.map((post) => (
+                <PostCard post={post} key={post._id + 1} />
+            ))}
         </div>
     );
 };
