@@ -1,29 +1,44 @@
-import { useParams } from 'react-router-dom'
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { fetchPost } from "@/services/post";
 
 const PostDetail = () => {
     const { postId } = useParams();
-    console.log(postId);
+    const [post, setPost] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadPost = async () => {
+            try {
+                const data = await fetchPost(postId);
+                setPost(data.data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadPost();
+    }, [postId]);
+
+    if (loading) return <p>Loading post...</p>;
+    if (!post) return <p>Post not found ❌</p>;
 
     return (
         <div className="max-w-3xl mx-auto p-6 flex flex-col gap-4">
+            <h1 className="text-2xl font-bold">{post.title}</h1>
 
-            <h1 className="text-2xl font-semibold">
-                Post Title Here
-            </h1>
-
-            <div className="text-sm text-gray-500 flex gap-2">
-                <span>Author Name</span>
-                <span>•</span>
-                <span>Post Type</span>
+            <div className="text-sm text-gray-500">
+                <p>Author: {post.author?.name}</p>
+                <p>Role: {post.author?.role}</p>
+                <p>Field: {post.author?.fieldOfStudy}</p>
+                <p>Institution: {post.author?.institution}</p>
             </div>
 
-            <div className="border rounded-lg p-4 text-sm leading-relaxed">
-                Full post content will appear here. This is where the complete
-                description or body of the post will be displayed.
-            </div>
-
+            <p className="text-gray-800">{post.content}</p>
         </div>
-    )
-}
+    );
+};
 
 export default PostDetail;

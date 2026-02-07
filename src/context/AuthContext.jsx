@@ -23,7 +23,3 @@ export const AuthProvider = ({ children }) => {
 }
 
 
-
-// so here what i did was that i first creagted a authContext a
-
-
