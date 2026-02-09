@@ -15,7 +15,6 @@ const Feed = () => {
                 const data = await fetchPosts();
                 setPosts(data.data);
                 setLoading(false);
-                console.log(data.data);
             } catch (err) {
                 console.error(err.message);
                 setLoading(false);

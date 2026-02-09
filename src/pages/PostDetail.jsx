@@ -1,11 +1,27 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { fetchPost } from "@/services/post";
+import { fetchComments } from "@/services/comments";
 
 const PostDetail = () => {
     const { postId } = useParams();
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [comments, setComments] = useState(null);
+
+    useEffect(() => {
+        const loadComments = async () => {
+            try {
+                const data = await fetchComments(postId);
+                setComments(data.data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadComments();
+    }, [postId]);
 
     useEffect(() => {
         const loadPost = async () => {

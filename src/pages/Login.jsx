@@ -25,7 +25,6 @@ const Login = () => {
     try {
       const response = await loginUser({ email, password });
       login(response.data);
-      console.log("Login Success, user stored in context");
     } catch (err) {
       console.error("Login Failed: ", err);
     }
@@ -36,8 +35,9 @@ const Login = () => {
       const email = "idk@gmail.com"
       const password = "Chanchal@123"
       const response = await loginUser({ email, password });
+
+
       login(response.data);
-      console.log("Login Success, user stored in context");
     } catch (err) {
       console.error("Login Failed: ", err);
     }

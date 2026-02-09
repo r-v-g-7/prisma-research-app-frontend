@@ -36,9 +36,7 @@ const Register = () => {
 
     try {
       const response = await registerUser({ name, email, password, role, institution, fieldOfStudy });
-
       login(response.data);
-      console.log("Registration successful");
     } catch (err) {
       console.error("Register Failed: ", err);
     }

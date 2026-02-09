@@ -8,11 +8,13 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
 
     const login = (userInfo) => {
-        setUser(userInfo);
+        setUser(userInfo.user);
+        localStorage.setItem('token', userInfo.token);
     }
 
     const logout = () => {
         setUser(null);
+        localStorage.removeItem('token');
     }
 
     return (
