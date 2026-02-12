@@ -14,6 +14,8 @@ const PostDetail = () => {
             try {
                 const data = await fetchComments(postId);
                 setComments(data.data);
+                console.log(data.data);
+
             } catch (err) {
                 console.error(err);
             } finally {
@@ -53,6 +55,18 @@ const PostDetail = () => {
             </div>
 
             <p className="text-gray-800">{post.content}</p>
+
+            <div className="mt-8 border-t pt-6">
+                <h2 className="text-xl font-semibold mb-4">Comments</h2>
+                {comments?.length === 0 && <p className="text-gray-500">No comments yet</p>}
+                {comments?.map((comment) => (
+                    <div key={comment._id} className="bg-gray-50 p-4 rounded mb-3">
+                        <p>{comment.author.name}</p>
+                        <p>{comment.content}</p>
+                    </div>
+                ))}
+            </div>
+
         </div>
     );
 };
