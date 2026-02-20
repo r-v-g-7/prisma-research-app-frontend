@@ -42,6 +42,12 @@ function App() {
                 <PostDetail />
               }
             />
+            <Route
+              path='/post/:postId'
+              element={
+                <PostDetail />
+              }
+            />
           </Route>
 
 
