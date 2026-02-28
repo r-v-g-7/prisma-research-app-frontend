@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
 import PostDetail from "./pages/postDetail";
+import CreatePost from "./pages/CreatePost";
 
 function App() {
   return (
@@ -43,16 +44,12 @@ function App() {
               }
             />
             <Route
-              path='/post/:postId'
+              path='/create-post'
               element={
-                <PostDetail />
+                <CreatePost />
               }
             />
           </Route>
-
-
-
-
 
         </Routes>
       </BrowserRouter>
