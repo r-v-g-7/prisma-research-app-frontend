@@ -24,6 +24,12 @@ const Navbar = () => {
                     >
                         Create Post
                     </Link>
+                    <Link
+                        to="/workspaces"
+                        className="text-gray-700 hover:text-gray-900 transition-colors"
+                    >
+                        Workspaces
+                    </Link>
                     <Button onClick={logout} className="bg-red-500 text-white hover:bg-red-600 px-4 py-2 text-sm rounded">
                         Logout
                     </Button>

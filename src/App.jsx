@@ -10,6 +10,7 @@ import { AuthProvider } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
 import PostDetail from "./pages/postDetail";
 import CreatePost from "./pages/CreatePost";
+import { Workspaces } from "./pages/Workspaces";
 
 function App() {
   return (
@@ -47,6 +48,12 @@ function App() {
               path='/create-post'
               element={
                 <CreatePost />
+              }
+            />
+            <Route
+              path='/workspaces'
+              element={
+                <Workspaces />
               }
             />
           </Route>
