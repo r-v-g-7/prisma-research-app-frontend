@@ -25,7 +25,7 @@ export const fetchPost = async (postId) => {
 export const createPost = async (postData) => {
     const token = localStorage.getItem('token');
 
-    const response = await fetch(`http://localhost:3000/post/create/`, {
+    const response = await fetch(`http://localhost:3000/post/create`, {
         method: "POST",
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -39,5 +39,4 @@ export const createPost = async (postData) => {
     }
 
     return response.json();
-
 }

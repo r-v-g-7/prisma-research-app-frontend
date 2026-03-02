@@ -14,6 +14,7 @@ const CreatePost = () => {
     const [content, setContent] = useState("");
     const [postType, setPostType] = useState("");
     const [errors, setErrors] = useState({});
+    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -30,14 +31,18 @@ const CreatePost = () => {
             return;
         }
         try {
-            const postData = { title, content, postType };
+            const postData = { title, content, type: postType };
+            console.log("Sending postData:", postData);
             const data = await createPost(postData);
+            setShowSuccess(true);
             console.log(data);
-            setTitle("");
-            setContent("");
-            setPostType("");
-            localStorage.removeItem('post-draft');
-            navigate('/feed');
+            setTimeout(() => {
+                setTitle("");
+                setContent("");
+                setPostType("");
+                localStorage.removeItem('post-draft');
+                navigate("/feed");
+            }, 1500);
         } catch (err) {
             console.error(err.message);
         }
@@ -65,7 +70,6 @@ const CreatePost = () => {
     return (
         <div className="max-w-3xl mx-auto p-6">
             <h1 className="text-3xl font-bold mb-6">Create New Post</h1>
-
             <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">
                     Title
@@ -145,6 +149,12 @@ const CreatePost = () => {
             >
                 Publish Post
             </Button>
+
+            {showSuccess && (
+                <div className="mt-4 mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                    ✅ Post created successfully! Redirecting...
+                </div>
+            )}
         </div>
     );
 }
