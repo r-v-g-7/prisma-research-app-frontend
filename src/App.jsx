@@ -2,7 +2,6 @@ import { BrowserRouter } from "react-router-dom";
 import Login from "./pages/Login";
 import Feed from "./pages/Feed";
 import Register from "./pages/Register"
-import Workspace from "./components/Workspace";
 import { Route } from "react-router-dom";
 import { Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -11,6 +10,8 @@ import MainLayout from "./layouts/MainLayout";
 import PostDetail from "./pages/postDetail";
 import CreatePost from "./pages/CreatePost";
 import { Workspaces } from "./pages/Workspaces";
+import { CreateWorkspace } from "./pages/createWorkspace";
+import { Navigate } from "react-router-dom";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Routes>
           <Route path='/login' element={<Login />} />
           <Route path='/register' element={<Register />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
           <Route element={
             <ProtectedRoute>
@@ -30,12 +32,6 @@ function App() {
               path='/feed'
               element={
                 <Feed />
-              }
-            />
-            <Route
-              path='/workspace/:id'
-              element={
-                <Workspace />
               }
             />
             <Route
@@ -54,6 +50,12 @@ function App() {
               path='/workspaces'
               element={
                 <Workspaces />
+              }
+            />
+            <Route
+              path='/workspace/create'
+              element={
+                <CreateWorkspace />
               }
             />
           </Route>
