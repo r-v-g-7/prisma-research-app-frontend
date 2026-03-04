@@ -51,7 +51,7 @@ export const Workspaces = () => {
             className="bg-white p-6 rounded shadow-md border hover:shadow-lg transition-shadow cursor-pointer"
             onClick={() => navigate(`/workspace/${workspace._id}`)}
           >
-            <h3 className="text-xl font-bold mb-2">{workspace.name}</h3>
+            <h3 className="text-xl font-bold mb-2">{workspace.title || workspace.name}</h3>
             <p className="text-gray-500 text-sm">
               Created by: {workspace.creator?.name} ({workspace.creator?.role})
             </p>

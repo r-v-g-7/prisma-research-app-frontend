@@ -2,6 +2,8 @@ import React from 'react'
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { createWorkspace } from '@/services/workspace';
+import { useNavigate } from 'react-router-dom';
 
 export const CreateWorkspace = () => {
 
@@ -9,15 +11,20 @@ export const CreateWorkspace = () => {
     const [description, setDescription] = useState("");
     const [workspaceType, setWorkspaceType] = useState("");
     const [privacy, setPrivacy] = useState("");
-    const [tags, setTags] = useState([]);
+    const [tags, setTags] = useState("");
     const [errors, setErrors] = useState({});
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const navigate = useNavigate();
 
     const validateForm = () => {
         const newErrors = {};
-        if (!title || title.length < 5) {
+        if (!title.trim() || title.trim().length < 5) {
             newErrors.title = "Title must be at least 5 characters";
         }
-        if (!description || description.length < 20) {
+        if (!description.trim() || description.trim().length < 20) {
             newErrors.description = "Description must be at least 20 characters";
         }
         if (!workspaceType) {
@@ -26,11 +33,11 @@ export const CreateWorkspace = () => {
         if (!privacy) {
             newErrors.privacy = "Privacy setting is required";
         }
-
         return newErrors;
     }
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        setErrorMessage("");
         const validationError = validateForm();
         setErrors(validationError);
 
@@ -38,21 +45,50 @@ export const CreateWorkspace = () => {
             return;
         }
 
+        const tagsArr = tags.trim().split(",").map(e => e.trim()).filter(Boolean);
 
+        try {
+            setLoading(true);
+            const workspaceData = { title, description, type: workspaceType, privacy, tags: tagsArr };
+            console.log("Workspace data send: ", workspaceData);
+
+            const data = await createWorkspace(workspaceData);
+            console.log("workspace data received", data);
+
+            setLoading(false);
+            setShowSuccess(true);
+
+            setTimeout(() => {
+                setTitle("");
+                setDescription("");
+                setPrivacy("");
+                setTags("");
+                setWorkspaceType("");
+                setShowSuccess(false);
+                navigate("/workspaces");
+            }, 1500);
+
+        } catch (err) {
+            setLoading(false);
+            console.error(err.message);
+            setErrorMessage(err.response?.data?.message || "Something went wrong. Please try again.");
+        }
     }
 
     const handleCancel = () => {
-
+        navigate("/feed");
+        setTitle("");
+        setDescription("");
+        setPrivacy("");
+        setTags("");
+        setWorkspaceType("");
     }
 
-
+    const parsedTags = tags.trim().split(",").map(e => e.trim()).filter(Boolean);
 
     return (
         <div className="max-w-3xl mx-auto p-6">
             <h1 className="text-3xl font-bold mb-6">Create Workspace</h1>
-
-            {/* Success Message */}
-            {/* showSuccess state logic here */}
 
             <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">
@@ -146,35 +182,61 @@ export const CreateWorkspace = () => {
                 <h3 className="text-sm font-semibold text-gray-600 mb-3">Preview</h3>
                 <div className="bg-white p-6 rounded shadow-md border">
                     <h3 className="text-xl font-bold mb-2">
-                        {title}
+                        {title || <span className="text-gray-300">Workspace Title</span>}
                     </h3>
                     <p className="text-sm text-gray-500 mb-1">
-                        {workspaceType}
+                        {workspaceType || <span className="text-gray-300">Type</span>}
                     </p>
                     <p className="text-sm text-gray-500 mb-3">
-                        {privacy}
+                        {privacy || <span className="text-gray-300">Privacy</span>}
                     </p>
-                    {tags}
+                    {parsedTags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {parsedTags.map((tag, index) => (
+                                <span
+                                    key={index}
+                                    className="bg-blue-100 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full"
+                                >
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                     <p className="text-gray-600 text-sm mt-3">
-                        {description}
+                        {description || <span className="text-gray-300">Description will appear here...</span>}
                     </p>
                 </div>
             </div>
 
             <div className="flex gap-4">
                 <Button
-                    onClick={() => handleCancel()}
+                    onClick={handleCancel}
                     className="flex-1 bg-gray-500 text-white hover:bg-gray-600"
                 >
                     Cancel
                 </Button>
-                <Button
-                    onClick={() => handleSubmit()}
-                    className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
-                >
-                    Create Workspace
-                </Button>
+                {loading ? (
+                    <p className="flex-1 text-center text-gray-500 self-center">Loading.....</p>
+                ) : (
+                    <Button
+                        onClick={handleSubmit}
+                        className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                        Create Workspace
+                    </Button>
+                )}
             </div>
+
+            {showSuccess && (
+                <div className="mt-4 mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                    ✅ Workspace created successfully! Redirecting...
+                </div>
+            )}
+            {errorMessage && (
+                <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
+                    {errorMessage}
+                </div>
+            )}
         </div>
     )
 }
