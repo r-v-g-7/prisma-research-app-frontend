@@ -12,6 +12,7 @@ import CreatePost from "./pages/CreatePost";
 import { Workspaces } from "./pages/Workspaces";
 import { CreateWorkspace } from "./pages/createWorkspace";
 import { Navigate } from "react-router-dom";
+import WorkspaceDetail from "./pages/workspaceDetail";
 
 function App() {
   return (
@@ -56,6 +57,12 @@ function App() {
               path='/workspace/create'
               element={
                 <CreateWorkspace />
+              }
+            />
+            <Route
+              path='/workspace/:id'
+              element={
+                <WorkspaceDetail />
               }
             />
           </Route>

@@ -17,7 +17,7 @@ export const fetchWorkspaces = async () => {
 export const createWorkspace = async (workspaceData) => {
     const token = localStorage.getItem('token');
 
-    const response = await fetch('http://localhost:3000/workspace/create', {
+    const response = await fetch("http://localhost:3000/workspace/create", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -27,9 +27,64 @@ export const createWorkspace = async (workspaceData) => {
     });
 
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create workspace");
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create workspace");
     }
 
     return response.json();
 }
+
+
+export const workspaceInfo = async (workspaceId) => {
+
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+        `http://localhost:3000/workspace/view/${workspaceId}`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.message || "Failed to load workspace");
+    }
+
+    return data;
+};
+
+
+export const joinWorkspace = async (workspaceId) => {
+    const token = localStorage.getItem('token');
+
+    try {
+        const response = await fetch(`http://localhost:3000/workspace/join/${workspaceId}`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message);
+        }
+
+        console.log("Joined workspace:", data.workspace);
+        return data.workspace;
+
+    } catch (err) {
+        console.error("Failed to join workspace:", err.message);
+        // Show toast / error UI here
+    }
+};
+
+
