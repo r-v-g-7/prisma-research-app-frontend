@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { joinWorkspace, workspaceInfo } from "@/services/workspace";
+import { joinWorkspace, leaveWorkspace, workspaceInfo } from "@/services/workspace";
 
 const WorkspaceDetail = () => {
     const { id } = useParams();
@@ -27,6 +27,8 @@ const WorkspaceDetail = () => {
         loadWorkspace();
     }, [id]);
 
+    console.log("Workspace members:", workspace?.members);
+    console.log("Current user ID:", user?._id);
     const isMember = workspace?.members?.some(member => member._id === user?._id);
 
     const handleCopyLink = () => {
@@ -37,21 +39,24 @@ const WorkspaceDetail = () => {
 
     const handleJoin = async () => {
         try {
-            console.log("user: ", user);
-
             setLoading(true);
-            const data = joinWorkspace();
-
-
-
+            await joinWorkspace(id);
+            const data = await workspaceInfo(id);
+            setWorkspace(data.data);
         } catch (err) {
             console.error(err.message);
-
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleLeave = async () => {
-        // Later
+        try {
+            await leaveWorkspace(id);
+            navigate('/workspaces');
+        } catch (err) {
+            console.error(err.message);
+        }
     };
 
     if (loading) return <p>Loading workspace...</p>;
@@ -73,7 +78,6 @@ const WorkspaceDetail = () => {
 
             {workspace && (workspace.privacy === 'public' || isMember) && (
                 <>
-                    {/* Header Section */}
                     <div className="mb-6">
                         <h1 className="text-3xl font-bold mb-2">{workspace.title}</h1>
 
@@ -88,7 +92,6 @@ const WorkspaceDetail = () => {
                             </span>
                         </div>
 
-                        {/* Tags */}
                         {workspace.tags && workspace.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-4">
                                 {workspace.tags.map((tag, index) => (
@@ -147,7 +150,6 @@ const WorkspaceDetail = () => {
                             📋 Copy Invite Link
                         </Button>
 
-                        {/* Show Join button if NOT member and workspace is public */}
                         {!isMember && workspace.privacy === 'public' && (
                             <Button
                                 onClick={handleJoin}
@@ -157,7 +159,6 @@ const WorkspaceDetail = () => {
                             </Button>
                         )}
 
-                        {/* Show Leave button if IS member and NOT creator */}
                         {isMember && workspace.creator?._id !== user?._id && (
                             <Button
                                 onClick={handleLeave}

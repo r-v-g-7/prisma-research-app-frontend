@@ -67,7 +67,6 @@ export const joinWorkspace = async (workspaceId) => {
         const response = await fetch(`http://localhost:3000/workspace/join/${workspaceId}`, {
             method: "POST",
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             }
         });
@@ -78,8 +77,35 @@ export const joinWorkspace = async (workspaceId) => {
             throw new Error(data.message);
         }
 
-        console.log("Joined workspace:", data.workspace);
-        return data.workspace;
+        console.log("Joined workspace:", data);
+        return data;
+
+    } catch (err) {
+        console.error("Failed to join workspace:", err.message);
+        // Show toast / error UI here
+    }
+};
+
+
+export const leaveWorkspace = async (workspaceId) => {
+    const token = localStorage.getItem('token');
+
+    try {
+        const response = await fetch(`http://localhost:3000/workspace/leave/${workspaceId}`, {
+            method: "POST",
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message);
+        }
+
+        console.log("Left workspace:", data);
+        return data;
 
     } catch (err) {
         console.error("Failed to join workspace:", err.message);
