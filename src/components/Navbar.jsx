@@ -30,6 +30,12 @@ const Navbar = () => {
                     >
                         Workspaces
                     </Link>
+                    <Link
+                        to="/profile"
+                        className="text-gray-700 hover:text-gray-900 transition-colors"
+                    >
+                        Profile
+                    </Link>
                     <Button onClick={logout} className="bg-red-500 text-white hover:bg-red-600 px-4 py-2 text-sm rounded">
                         Logout
                     </Button>

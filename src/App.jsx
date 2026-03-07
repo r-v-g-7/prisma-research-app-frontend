@@ -13,6 +13,7 @@ import { Workspaces } from "./pages/Workspaces";
 import { CreateWorkspace } from "./pages/createWorkspace";
 import { Navigate } from "react-router-dom";
 import WorkspaceDetail from "./pages/workspaceDetail";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -63,6 +64,12 @@ function App() {
               path='/workspace/:id'
               element={
                 <WorkspaceDetail />
+              }
+            />
+            <Route
+              path='/profile'
+              element={
+                <Profile />
               }
             />
           </Route>
