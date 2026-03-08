@@ -51,11 +51,15 @@ const Profile = () => {
                 institution: institution.trim(),
                 fieldOfStudy: fieldOfStudy.trim()
             });
-            console.log(data);
-            setUser(prev => ({
-                ...prev,
+
+            const updatedUser = {
+                ...user,
                 ...data.data
-            }));
+            };
+
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+
             setShowSuccess(true);
             setIsEditing(false);
 

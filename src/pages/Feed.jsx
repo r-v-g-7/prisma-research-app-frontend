@@ -5,7 +5,7 @@ import PostCard from "@/components/PostCard";
 import { fetchPosts } from "@/services/post";
 
 const Feed = () => {
-    const { user, logout } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -30,13 +30,6 @@ const Feed = () => {
                 <h1 className="text-2xl font-semibold text-gray-800">
                     Welcome to Feed, {user?.name}
                 </h1>
-
-                <Button
-                    onClick={logout}
-                    className="bg-red-500 text-white hover:bg-red-600 w-32 py-2"
-                >
-                    Logout
-                </Button>
 
                 <div className="flex flex-col gap-4">
                     {posts.length === 0 ? (
