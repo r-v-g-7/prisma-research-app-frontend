@@ -44,6 +44,19 @@ export const Workspaces = () => {
 
       {loading && <p>Loading workspaces...</p>}
 
+      {!loading && workspaces?.length === 0 && (
+        <div className="text-center p-12 bg-white rounded-lg shadow-md">
+          <p className="text-2xl text-gray-600 mb-2">🏢 No workspaces yet</p>
+          <p className="text-gray-500 mb-4">Create one to start collaborating</p>
+          <Button
+            onClick={() => navigate('/workspace/create')}
+            className="bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Create First Workspace
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {workspaces?.map((workspace) => (
           <div

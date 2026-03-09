@@ -157,7 +157,7 @@ const Profile = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-600 mb-1">Bio</label>
                                     <p className="text-gray-700">
-                                        {user.bio}
+                                        {user.bio || "No bio added yet. Click edit to add one."}
                                     </p>
                                 </div>
 
