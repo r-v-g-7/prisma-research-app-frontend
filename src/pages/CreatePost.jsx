@@ -15,6 +15,7 @@ const CreatePost = () => {
     const [postType, setPostType] = useState("");
     const [errors, setErrors] = useState({});
     const [showSuccess, setShowSuccess] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -52,6 +53,9 @@ const CreatePost = () => {
             return;
         }
 
+        if (submitting) return;
+        setSubmitting(true);
+
         try {
             const postData = { title, content, type: postType };
             console.log("Sending postData:", postData);
@@ -68,6 +72,7 @@ const CreatePost = () => {
         } catch (err) {
             console.error(err.message);
         }
+        setSubmitting(false);
     }
 
     return (
@@ -146,12 +151,11 @@ const CreatePost = () => {
                 </div>
 
                 <Button
-                    onClick={() => {
-                        handleSubmit();
-                    }}
+                    onClick={handleSubmit}
+                    disabled={submitting}
                     className="w-full bg-blue-600 text-white hover:bg-blue-700 py-3"
                 >
-                    Publish Post
+                    {submitting ? "Creating..." : "Publish Post"}
                 </Button>
 
                 {showSuccess && (

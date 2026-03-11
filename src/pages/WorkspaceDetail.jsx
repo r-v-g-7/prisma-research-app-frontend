@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { joinWorkspace, leaveWorkspace, workspaceInfo } from "@/services/workspace";
 
 const WorkspaceDetail = () => {
-    const { id } = useParams();
-    const { user } = useContext(AuthContext);
-    const navigate = useNavigate();
-
     const [workspace, setWorkspace] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showCopySuccess, setShowCopySuccess] = useState(false);
+    const [processing, setProcessing] = useState(false);
+
+    const { id } = useParams();
+    const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const loadWorkspace = async () => {
@@ -38,6 +39,8 @@ const WorkspaceDetail = () => {
     };
 
     const handleJoin = async () => {
+        if (processing) return;
+        setProcessing(true);
         try {
             setLoading(true);
             await joinWorkspace(id);
@@ -48,16 +51,22 @@ const WorkspaceDetail = () => {
         } finally {
             setLoading(false);
         }
+        setProcessing(false);
     };
 
     const handleLeave = async () => {
+        if (processing) return;
+        setProcessing(true);
         try {
             await leaveWorkspace(id);
             navigate('/workspaces');
         } catch (err) {
             console.error(err.message);
         }
+        setProcessing(false);
     };
+
+
 
     if (loading) return <p className="text-center p-8 text-gray-600">Loading workspace...</p>;
 
@@ -153,18 +162,18 @@ const WorkspaceDetail = () => {
                         {!isMember && workspace.privacy === 'public' && (
                             <Button
                                 onClick={handleJoin}
-                                className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
+                                disabled={processing}
                             >
-                                ➕ Join Workspace
+                                {processing ? "Joining..." : "➕ Join Workspace"}
                             </Button>
                         )}
 
                         {isMember && workspace.creator?._id !== user?._id && (
                             <Button
                                 onClick={handleLeave}
-                                className="flex-1 bg-red-600 text-white hover:bg-red-700"
+                                disabled={processing}
                             >
-                                🚪 Leave Workspace
+                                {processing ? "Leaving..." : "🚪 Leave Workspace"}
                             </Button>
                         )}
                     </div>

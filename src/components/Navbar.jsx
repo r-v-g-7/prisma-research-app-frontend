@@ -2,9 +2,11 @@ import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useLocation } from 'react-router-dom';
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
+    const location = useLocation();
 
     return (
         <nav className="bg-white shadow-md px-6 py-4 flex justify-between items-center">
@@ -12,7 +14,13 @@ const Navbar = () => {
 
             {user && (
                 <div className="flex items-center gap-4">
-                    <Link to="/feed" className="text-gray-700 hover:text-gray-900 transition-colors">
+                    <Link
+                        to="/feed"
+                        className={`transition-colors ${location.pathname === '/feed'
+                            ? 'text-blue-600 font-semibold'
+                            : 'text-gray-700 hover:text-gray-900'
+                            }`}
+                    >
                         Feed
                     </Link>
                     <Link to={`/workspace/${user.id}`} className="text-gray-700 hover:text-gray-900 transition-colors">
@@ -26,13 +34,19 @@ const Navbar = () => {
                     </Link>
                     <Link
                         to="/workspaces"
-                        className="text-gray-700 hover:text-gray-900 transition-colors"
+                        className={`transition-colors ${location.pathname === '/workspaces' || location.pathname.startsWith('/workspace')
+                            ? 'text-blue-600 font-semibold'
+                            : 'text-gray-700 hover:text-gray-900'
+                            }`}
                     >
                         Workspaces
                     </Link>
                     <Link
                         to="/profile"
-                        className="text-gray-700 hover:text-gray-900 transition-colors"
+                        className={`transition-colors ${location.pathname === '/profile'
+                                ? 'text-blue-600 font-semibold'
+                                : 'text-gray-700 hover:text-gray-900'
+                            }`}
                     >
                         Profile
                     </Link>
