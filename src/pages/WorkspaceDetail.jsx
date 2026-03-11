@@ -59,16 +59,10 @@ const WorkspaceDetail = () => {
         }
     };
 
-    if (loading) return <p>Loading workspace...</p>;
+    if (loading) return <p className="text-center p-8 text-gray-600">Loading workspace...</p>;
 
     return (
         <div className="max-w-4xl mx-auto p-6">
-            {workspace?.members?.length === 0 && (
-                <div className="text-center p-6 bg-gray-50 rounded">
-                    <p className="text-gray-600">No members yet</p>
-                    <p className="text-sm text-gray-500">Join to be the first member!</p>
-                </div>
-            )}
             {workspace && workspace.privacy === 'private' && !isMember && (
                 <div className="text-center p-8">
                     <p className="text-xl text-gray-600">🔒 This workspace is private</p>

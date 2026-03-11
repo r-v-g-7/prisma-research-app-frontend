@@ -8,6 +8,7 @@ const PostDetail = () => {
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
     const [comments, setComments] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
     const commentRef = useRef(null);
 
 
@@ -43,15 +44,16 @@ const PostDetail = () => {
     }, [postId])
 
     const handleCommentSubmit = async () => {
+        setSubmitting(true);
         const content = commentRef.current.value;
-        const data = await createComment(postId, content);
-        console.log(data);
+        await createComment(postId, content);
         loadComments();
         commentRef.current.value = "";
+        setSubmitting(false);
     }
 
 
-    if (loading) return <p>Loading post...</p>;
+    if (loading) return <p className="text-center p-8 text-gray-600">Loading post...</p>;
     if (!post) return <p>Post not found ❌</p>;
 
     return (
@@ -84,8 +86,12 @@ const PostDetail = () => {
                         placeholder="Add a comment..."
                         ref={commentRef}
                     />
-                    <button onClick={handleCommentSubmit} className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        Post Comment
+                    <button
+                        onClick={handleCommentSubmit}
+                        disabled={submitting}
+                        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                    >
+                        {submitting ? "Submitting..." : "Post Comment"}
                     </button>
                 </div>
 

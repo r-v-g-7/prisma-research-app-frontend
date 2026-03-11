@@ -42,7 +42,7 @@ export const Workspaces = () => {
         </Button>
       </div>
 
-      {loading && <p>Loading workspaces...</p>}
+      {loading && <p className="text-center p-8 text-gray-600">Loading workspaces...</p>}
 
       {!loading && workspaces?.length === 0 && (
         <div className="text-center p-12 bg-white rounded-lg shadow-md">
