@@ -7,7 +7,7 @@ import { Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
-import PostDetail from "./pages/postDetail";
+import PostDetail from "./pages/PostDetail";
 import CreatePost from "./pages/CreatePost";
 import { Workspaces } from "./pages/Workspaces";
 import { CreateWorkspace } from "./pages/createWorkspace";
