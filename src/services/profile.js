@@ -2,7 +2,7 @@ export const updateProfile = async ({ name, bio, institution, fieldOfStudy }) =>
     const token = localStorage.getItem("token");
 
     try {
-        const response = await fetch(`http://localhost:3000/profile/update`, {
+        const response = await fetch(`${API_BASE_URL}/profile/update`, {
             method: "PATCH",
             headers: {
                 'Authorization': `Bearer ${token}`,

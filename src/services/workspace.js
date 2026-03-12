@@ -1,7 +1,9 @@
+import { API_BASE_URL } from "./config";
+
 export const fetchWorkspaces = async () => {
     const token = localStorage.getItem('token');
 
-    const response = await fetch('http://localhost:3000/workspace/all', {
+    const response = await fetch(`${API_BASE_URL}/workspace/all`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -17,7 +19,7 @@ export const fetchWorkspaces = async () => {
 export const createWorkspace = async (workspaceData) => {
     const token = localStorage.getItem('token');
 
-    const response = await fetch("http://localhost:3000/workspace/create", {
+    const response = await fetch(`${API_BASE_URL}/workspace/create`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -40,7 +42,7 @@ export const workspaceInfo = async (workspaceId) => {
     const token = localStorage.getItem("token");
 
     const res = await fetch(
-        `http://localhost:3000/workspace/view/${workspaceId}`,
+        `${API_BASE_URL}/workspace/view/${workspaceId}`,
         {
             method: "GET",
             headers: {
@@ -64,7 +66,7 @@ export const joinWorkspace = async (workspaceId) => {
     const token = localStorage.getItem('token');
 
     try {
-        const response = await fetch(`http://localhost:3000/workspace/join/${workspaceId}`, {
+        const response = await fetch(`${API_BASE_URL}/workspace/join/${workspaceId}`, {
             method: "POST",
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -91,7 +93,7 @@ export const leaveWorkspace = async (workspaceId) => {
     const token = localStorage.getItem('token');
 
     try {
-        const response = await fetch(`http://localhost:3000/workspace/leave/${workspaceId}`, {
+        const response = await fetch(`${API_BASE_URL}/workspace/leave/${workspaceId}`, {
             method: "POST",
             headers: {
                 'Authorization': `Bearer ${token}`

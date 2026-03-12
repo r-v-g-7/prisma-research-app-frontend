@@ -1,6 +1,8 @@
+import { API_BASE_URL } from "./config";
+
 export const fetchPosts = async () => {
 
-    const response = await fetch("http://localhost:3000/post/feed")
+    const response = await fetch(`${API_BASE_URL}/post/feed`)
 
     if (!response.ok) {
         throw new Error("Failed to load posts");
@@ -11,7 +13,7 @@ export const fetchPosts = async () => {
 
 
 export const fetchPost = async (postId) => {
-    const response = await fetch(`http://localhost:3000/post/view/${postId}`);
+    const response = await fetch(`${API_BASE_URL}/post/view/${postId}`);
 
     if (!response.ok) {
         throw new Error("Failed to load post");
@@ -25,7 +27,7 @@ export const fetchPost = async (postId) => {
 export const createPost = async (postData) => {
     const token = localStorage.getItem('token');
 
-    const response = await fetch(`http://localhost:3000/post/create`, {
+    const response = await fetch(`${API_BASE_URL}/post/create`, {
         method: "POST",
         headers: {
             'Authorization': `Bearer ${token}`,
