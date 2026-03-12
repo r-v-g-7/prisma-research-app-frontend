@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "./config";
+
 export const updateProfile = async ({ name, bio, institution, fieldOfStudy }) => {
     const token = localStorage.getItem("token");
 
