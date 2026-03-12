@@ -12,7 +12,7 @@ import CreatePost from "./pages/CreatePost";
 import { Workspaces } from "./pages/Workspaces";
 import { CreateWorkspace } from "./pages/CreateWorkspace";
 import { Navigate } from "react-router-dom";
-import WorkspaceDetail from "./pages/workspaceDetail";
+import WorkspaceDetail from "./pages/WorkspaceDetail";
 import Profile from "./pages/Profile";
 
 function App() {
