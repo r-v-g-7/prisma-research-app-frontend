@@ -58,9 +58,11 @@ const Profile = () => {
 
     if (!user) return <p>Loading...</p>;
 
+    // Profile.jsx - Update the outermost div
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="bg-gray-50">
             <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
+                {/* rest stays same */}
                 {showSuccess && (
                     <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm flex items-center gap-2">
                         <span>✓</span> Profile updated!

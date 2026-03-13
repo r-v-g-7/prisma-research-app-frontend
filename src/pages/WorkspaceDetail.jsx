@@ -105,9 +105,11 @@ const WorkspaceDetail = () => {
         );
     }
 
+    // WorkspaceDetail.jsx - Update the outermost div
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="bg-gray-50">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+                {/* rest stays same */}
                 {/* Back */}
                 <button onClick={() => navigate('/workspaces')} className="text-sm text-gray-600 hover:text-gray-900 mb-4 flex items-center gap-1">
                     ← Back

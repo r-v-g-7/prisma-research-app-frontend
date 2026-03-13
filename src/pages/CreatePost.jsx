@@ -58,9 +58,11 @@ const CreatePost = () => {
         setSubmitting(false);
     };
 
+    // CreatePost.jsx - Update the outermost div
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="bg-gray-50 py-6">
             <div className="max-w-2xl mx-auto px-4">
+                {/* rest stays same */}
                 {/* Header */}
                 <div className="mb-6">
                     <button onClick={() => navigate('/feed')} className="text-sm text-gray-600 hover:text-gray-900 mb-3 flex items-center gap-1">

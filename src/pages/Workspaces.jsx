@@ -24,9 +24,11 @@ export const Workspaces = () => {
   }, []);
 
   if (loading) {
+    // Workspaces.jsx - Update the outermost div
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
-        <div className="text-center">
+      <div className="bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+          {/* rest stays same */}
           <div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Loading workspaces...</p>
         </div>

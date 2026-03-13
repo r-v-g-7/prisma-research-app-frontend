@@ -27,54 +27,53 @@ const Feed = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
+            <div className="flex items-center justify-center h-96">
                 <div className="text-center">
-                    <div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading posts...</p>
+                    <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-sm text-gray-500">Loading posts...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
-                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Feed</h1>
-                        <Button
-                            onClick={() => navigate('/create-post')}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 font-medium shadow-sm whitespace-nowrap"
-                        >
-                            + New Post
-                        </Button>
-                    </div>
-                    <p className="text-gray-600">Discover research ideas, papers, and discussions</p>
+        <div className="bg-gray-50">
+            {/* Top Bar */}
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3">
+                <div className="max-w-2xl mx-auto flex items-center justify-between">
+                    <h1 className="text-lg font-bold text-gray-900">Feed</h1>
+                    <Button
+                        onClick={() => navigate('/create-post')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 text-sm font-medium"
+                    >
+                        + Post
+                    </Button>
                 </div>
+            </div>
 
+            <div className="max-w-2xl mx-auto">
                 {/* Empty State */}
                 {posts?.length === 0 && (
-                    <div className="text-center py-16 sm:py-20 bg-white rounded-2xl border-2 border-dashed border-gray-300">
-                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
-                            <span className="text-4xl">📝</span>
+                    <div className="mt-12 text-center py-16 bg-white rounded-lg border border-gray-200 mx-4">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-3xl">📝</span>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">No posts yet</h3>
-                        <p className="text-gray-500 mb-6 px-4 max-w-sm mx-auto">Be the first to share a research idea and start the conversation!</p>
+                        <h3 className="text-base font-semibold text-gray-900 mb-1">No posts yet</h3>
+                        <p className="text-sm text-gray-500 mb-5">Be the first to share a research idea!</p>
                         <Button
                             onClick={() => navigate('/create-post')}
-                            className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 font-medium shadow-sm"
+                            className="bg-blue-600 text-white hover:bg-blue-700 px-5 py-2 text-sm"
                         >
-                            Create First Post
+                            Create Post
                         </Button>
                     </div>
                 )}
 
                 {/* Posts */}
                 {posts?.length > 0 && (
-                    <div className="space-y-4">
-                        {posts.map((post) => (
-                            <PostCard post={post} key={post._id} />
+                    <div className="py-0">
+                        {posts.map((post, idx) => (
+                            <PostCard post={post} key={post._id} isFirst={idx === 0} />
                         ))}
                     </div>
                 )}

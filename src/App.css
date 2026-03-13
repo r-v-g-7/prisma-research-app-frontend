@@ -40,3 +40,12 @@
 .read-the-docs {
   color: #888;
 }
+
+/* In your index.css or App.css */
+* {
+    scrollbar-width: none; /* Firefox */
+}
+
+*::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+}
