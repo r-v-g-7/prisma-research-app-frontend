@@ -1,3 +1,4 @@
+// WorkspaceDetail.jsx
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
@@ -28,8 +29,6 @@ const WorkspaceDetail = () => {
         loadWorkspace();
     }, [id]);
 
-    console.log("Workspace members:", workspace?.members);
-    console.log("Current user ID:", user?._id);
     const isMember = workspace?.members?.some(member => member._id === user?._id);
 
     const handleCopyLink = () => {
@@ -42,16 +41,14 @@ const WorkspaceDetail = () => {
         if (processing) return;
         setProcessing(true);
         try {
-            setLoading(true);
             await joinWorkspace(id);
             const data = await workspaceInfo(id);
             setWorkspace(data.data);
         } catch (err) {
             console.error(err.message);
         } finally {
-            setLoading(false);
+            setProcessing(false);
         }
-        setProcessing(false);
     };
 
     const handleLeave = async () => {
@@ -62,139 +59,137 @@ const WorkspaceDetail = () => {
             navigate('/workspaces');
         } catch (err) {
             console.error(err.message);
+        } finally {
+            setProcessing(false);
         }
-        setProcessing(false);
     };
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
+                <div className="text-center">
+                    <div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600 font-medium">Loading workspace...</p>
+                </div>
+            </div>
+        );
+    }
 
+    if (!workspace) {
+        return (
+            <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
+                <div className="text-center">
+                    <p className="text-lg text-gray-600 mb-4">Workspace not found</p>
+                    <Button onClick={() => navigate('/workspaces')} className="bg-blue-600 hover:bg-blue-700 text-sm">
+                        Back to Workspaces
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
-    if (loading) return <p className="text-center p-8 text-gray-600">Loading workspace...</p>;
+    if (workspace.privacy === 'private' && !isMember) {
+        return (
+            <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
+                <div className="text-center max-w-md mx-auto px-4">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-4xl">🔒</span>
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">Private Workspace</h2>
+                    <p className="text-sm text-gray-500 mb-6">You need an invitation to view this workspace</p>
+                    <Button onClick={() => navigate('/workspaces')} className="bg-blue-600 hover:bg-blue-700 text-sm">
+                        Back to Workspaces
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
-            {workspace && workspace.privacy === 'private' && !isMember && (
-                <div className="text-center p-8">
-                    <p className="text-xl text-gray-600">🔒 This workspace is private</p>
-                    <p className="text-gray-500 mt-2">You need an invitation to view this workspace</p>
-                    <Button
-                        onClick={() => navigate('/workspaces')}
-                        className="mt-4 bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                        Back to Workspaces
-                    </Button>
+        <div className="min-h-screen bg-gray-50">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+                {/* Back */}
+                <button onClick={() => navigate('/workspaces')} className="text-sm text-gray-600 hover:text-gray-900 mb-4 flex items-center gap-1">
+                    ← Back
+                </button>
+
+                {/* Header Card */}
+                <div className="bg-white rounded-lg border border-gray-200 p-5 mb-4">
+                    <div className="flex items-start justify-between mb-3">
+                        <h1 className="text-2xl font-bold text-gray-900">{workspace.title}</h1>
+                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                            {workspace.privacy === 'public' ? '🌐 Public' : '🔒 Private'}
+                        </span>
+                    </div>
+
+                    {workspace.tags && workspace.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                            {workspace.tags.map((tag, i) => (
+                                <span key={i} className="text-xs px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">
+                                    #{tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    <p className="text-sm text-gray-700">{workspace.description}</p>
                 </div>
-            )}
 
-            {workspace && (workspace.privacy === 'public' || isMember) && (
-                <>
-                    <div className="mb-6">
-                        <h1 className="text-3xl font-bold mb-2">{workspace.title}</h1>
-
-                        <div className="flex gap-2 mb-4">
-                            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
-                                {workspace.type === 'research' && '🔬 Research Project'}
-                                {workspace.type === 'study' && '📚 Study Group'}
-                                {workspace.type === 'lab' && '🧪 Lab Team'}
-                            </span>
-                            <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
-                                {workspace.privacy === 'public' ? '🌐 Public' : '🔒 Private'}
-                            </span>
+                {/* Creator */}
+                <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                    <p className="text-xs font-medium text-gray-500 mb-2">Created by</p>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                            {workspace.creator?.name?.charAt(0)?.toUpperCase()}
                         </div>
-
-                        {workspace.tags && workspace.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                {workspace.tags.map((tag, index) => (
-                                    <span key={index} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
-                                        #{tag}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="bg-white p-6 rounded shadow-md border mb-6">
-                        <h2 className="text-lg font-semibold mb-2">Description</h2>
-                        <p className="text-gray-700">{workspace.description}</p>
-                    </div>
-
-                    <div className="bg-white p-6 rounded shadow-md border mb-6">
-                        <h2 className="text-lg font-semibold mb-3">Created By</h2>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                                {workspace.creator?.name?.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <p className="font-medium">{workspace.creator?.name}</p>
-                                <p className="text-sm text-gray-500">{workspace.creator?.role}</p>
-                            </div>
+                        <div>
+                            <p className="text-sm font-semibold text-gray-900">{workspace.creator?.name}</p>
+                            <p className="text-xs text-gray-500 capitalize">{workspace.creator?.role}</p>
                         </div>
                     </div>
+                </div>
 
-                    {isMember && (
-                        <div className="bg-white p-6 rounded shadow-md border mb-6">
-                            <h2 className="text-lg font-semibold mb-4">
-                                Members ({workspace.members?.length || 0})
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {workspace.members?.map((member) => (
-                                    <div key={member._id} className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-                                        <div className="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                            {member.name?.charAt(0).toUpperCase()}
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-sm">{member.name}</p>
-                                            <p className="text-xs text-gray-500">{member.role}</p>
-                                        </div>
+                {/* Members */}
+                {isMember && (
+                    <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                        <p className="text-xs font-medium text-gray-500 mb-3">Members ({workspace.members?.length || 0})</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {workspace.members?.map((member) => (
+                                <div key={member._id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-full flex items-center justify-center text-xs font-semibold">
+                                        {member.name?.charAt(0)?.toUpperCase()}
                                     </div>
-                                ))}
-                            </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-medium text-gray-900 truncate">{member.name}</p>
+                                        <p className="text-xs text-gray-500 capitalize">{member.role}</p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    )}
-
-                    <div className="flex gap-4">
-                        <Button
-                            onClick={handleCopyLink}
-                            className="flex-1 bg-green-600 text-white hover:bg-green-700"
-                        >
-                            📋 Copy Invite Link
-                        </Button>
-
-                        {!isMember && workspace.privacy === 'public' && (
-                            <Button
-                                onClick={handleJoin}
-                                disabled={processing}
-                            >
-                                {processing ? "Joining..." : "➕ Join Workspace"}
-                            </Button>
-                        )}
-
-                        {isMember && workspace.creator?._id !== user?._id && (
-                            <Button
-                                onClick={handleLeave}
-                                disabled={processing}
-                            >
-                                {processing ? "Leaving..." : "🚪 Leave Workspace"}
-                            </Button>
-                        )}
                     </div>
+                )}
 
-                    {showCopySuccess && (
-                        <p className="text-green-600 text-center mt-4 font-medium">✅ Link copied to clipboard!</p>
-                    )}
-                </>
-            )}
-
-            {!loading && !workspace && (
-                <div className="text-center p-8">
-                    <p className="text-xl text-gray-600">Workspace not found</p>
-                    <Button
-                        onClick={() => navigate('/workspaces')}
-                        className="mt-4 bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                        Back to Workspaces
+                {/* Actions */}
+                <div className="flex gap-3">
+                    <Button onClick={handleCopyLink} variant="outline" className="flex-1 text-sm">
+                        📋 Copy Link
                     </Button>
+                    {!isMember && workspace.privacy === 'public' && (
+                        <Button onClick={handleJoin} disabled={processing} className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm">
+                            {processing ? "Joining..." : "Join"}
+                        </Button>
+                    )}
+                    {isMember && workspace.creator?._id !== user?._id && (
+                        <Button onClick={handleLeave} disabled={processing} variant="outline" className="flex-1 text-sm text-red-600 hover:bg-red-50 border-red-200">
+                            {processing ? "Leaving..." : "Leave"}
+                        </Button>
+                    )}
                 </div>
-            )}
+
+                {showCopySuccess && (
+                    <p className="text-center text-xs text-green-600 mt-3">✓ Link copied!</p>
+                )}
+            </div>
         </div>
     );
 };

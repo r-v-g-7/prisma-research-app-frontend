@@ -1,3 +1,4 @@
+// Profile.jsx
 import { useContext, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,57 +13,42 @@ const Profile = () => {
     const [fieldOfStudy, setFieldOfStudy] = useState("");
     const [showSuccess, setShowSuccess] = useState(false);
     const [saving, setSaving] = useState(false);
-
     const { user, setUser } = useContext(AuthContext);
 
     useEffect(() => {
-        const initializeEditForm = () => {
-            if (isEditing && user) {
-                setName(user.name || "");
-                setBio(user.bio || "");
-                setInstitution(user.institution || "");
-                setFieldOfStudy(user.fieldOfStudy || "");
-            }
-        };
-
-        initializeEditForm();
+        if (isEditing && user) {
+            setName(user.name || "");
+            setBio(user.bio || "");
+            setInstitution(user.institution || "");
+            setFieldOfStudy(user.fieldOfStudy || "");
+        }
     }, [isEditing, user]);
 
     useEffect(() => {
         if (showSuccess) {
-            const timer = setTimeout(() => {
-                setShowSuccess(false);
-            }, 3000);
-
+            const timer = setTimeout(() => setShowSuccess(false), 3000);
             return () => clearTimeout(timer);
         }
     }, [showSuccess]);
 
     const handleSubmit = async () => {
+        if (!name.trim()) {
+            alert("Name cannot be empty");
+            return;
+        }
+        setSaving(true);
         try {
-            setSaving(true);
-            if (!name.trim()) {
-                alert("Name cannot be empty");
-                return;
-            }
             const data = await updateProfile({
                 name: name.trim(),
                 bio: bio.trim(),
                 institution: institution.trim(),
                 fieldOfStudy: fieldOfStudy.trim()
             });
-
-            const updatedUser = {
-                ...user,
-                ...data.data
-            };
-
+            const updatedUser = { ...user, ...data.data };
             setUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
-
             setShowSuccess(true);
             setIsEditing(false);
-
         } catch (err) {
             console.log(err.message);
         } finally {
@@ -70,208 +56,117 @@ const Profile = () => {
         }
     };
 
-    if (!user) {
-        return <p>Loading profile...</p>;
-    }
+    if (!user) return <p>Loading...</p>;
 
     return (
-        <div className="max-w-3xl mx-auto p-6">
-
-            {user && (
-                <>
-                    <div className="bg-white p-8 rounded shadow-md border mb-6">
-
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-3xl font-bold">Profile</h1>
-
-                            {!isEditing && (
-                                <Button
-                                    onClick={() => setIsEditing(true)}
-                                    className="bg-blue-600 text-white hover:bg-blue-700"
-                                >
-                                    ✏️ Edit Profile
-                                </Button>
-                            )}
-                        </div>
-
-                        {/* Success Message */}
-                        {showSuccess && (
-                            <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-                                ✅ Profile updated successfully!
-                            </div>
-                        )}
-
-                        {/* View Mode */}
-                        {!isEditing && (
-                            <div className="space-y-4">
-
-                                {/* Avatar Circle */}
-                                <div className="flex justify-center mb-6">
-                                    <div className="w-24 h-24 bg-blue-500 text-white rounded-full flex items-center justify-center text-4xl font-bold">
-                                        {user?.name?.charAt(0)?.toUpperCase()}
-                                    </div>
-                                </div>
-
-                                {/* Name */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Name</label>
-                                    <p className="text-lg font-semibold">
-                                        {user.name}
-                                    </p>
-                                </div>
-
-                                {/* Email */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
-                                    <p className="text-lg">
-                                        {user.email}
-                                    </p>
-                                </div>
-
-                                {/* Role */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Role</label>
-                                    <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                                        {user.role}
-                                    </span>
-                                </div>
-
-                                {/* Field of Study */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Field of Study</label>
-                                    <p className="text-lg">
-                                        {user.fieldOfStudy}
-                                    </p>
-                                </div>
-
-                                {/* Institution */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Institution</label>
-                                    <p className="text-lg">
-                                        {user.institution}
-                                    </p>
-                                </div>
-
-                                {/* Bio */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Bio</label>
-                                    <p className="text-gray-700">
-                                        {user.bio || "No bio added yet. Click edit to add one."}
-                                    </p>
-                                </div>
-
-                            </div>
-                        )}
-
-                        {/* Edit Mode */}
-                        {isEditing && (
-                            <div className="space-y-4">
-
-                                {/* Avatar Circle */}
-                                <div className="flex justify-center mb-6">
-                                    <div className="w-24 h-24 bg-blue-500 text-white rounded-full flex items-center justify-center text-4xl font-bold">
-                                        {name?.charAt(0)?.toUpperCase()}
-                                    </div>
-                                </div>
-
-                                {/* Name Input */}
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">Name</label>
-                                    <Input
-                                        placeholder="Enter your name"
-                                        value={name}
-                                        onChange={e => setName(e.target.value)}
-                                    />
-                                </div>
-
-                                {/* Email (read-only) */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
-                                    <p className="text-lg text-gray-500">
-                                        {user.email}
-                                    </p>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        Email cannot be changed
-                                    </p>
-                                </div>
-
-                                {/* Role */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-600 mb-1">Role</label>
-                                    <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                                        {user.role}
-                                    </span>
-                                </div>
-
-                                {/* Field of Study */}
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">Field of Study</label>
-                                    <Input
-                                        placeholder="Enter field of study"
-                                        value={fieldOfStudy}
-                                        onChange={e => setFieldOfStudy(e.target.value)}
-                                    />
-                                </div>
-
-                                {/* Institution */}
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">Institution</label>
-                                    <Input
-                                        placeholder="Enter institution"
-                                        value={institution}
-                                        onChange={e => setInstitution(e.target.value)}
-                                    />
-                                </div>
-
-                                {/* Bio */}
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">
-                                        Bio
-                                        <span className="text-gray-400 ml-2 text-xs">(Optional)</span>
-                                    </label>
-
-                                    <textarea
-                                        className="w-full p-3 border rounded resize-none"
-                                        rows="4"
-                                        placeholder="Tell us about yourself..."
-                                        maxLength={300}
-                                        value={bio}
-                                        onChange={e => setBio(e.target.value)}
-                                    />
-
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        {300 - bio.length}
-                                    </p>
-                                </div>
-
-                                {/* Buttons */}
-                                <div className="flex gap-4 pt-4">
-
-                                    <Button
-                                        onClick={() => {
-                                            setIsEditing(false);
-                                            setShowSuccess(false);
-                                        }}
-                                        className="flex-1 bg-gray-500 text-white hover:bg-gray-600"
-                                    >
-                                        Cancel
-                                    </Button>
-
-                                    <Button
-                                        disabled={saving}
-                                        onClick={handleSubmit}
-                                    >
-                                        {saving ? "Saving..." : "Save Changes"}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-
+        <div className="min-h-screen bg-gray-50">
+            <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
+                {showSuccess && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm flex items-center gap-2">
+                        <span>✓</span> Profile updated!
                     </div>
-                </>
-            )}
+                )}
 
+                <div className="bg-white rounded-lg border border-gray-200 p-5">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-5">
+                        <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+                        {!isEditing && (
+                            <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700 text-sm px-4 py-2">
+                                Edit
+                            </Button>
+                        )}
+                    </div>
+
+                    {/* Avatar */}
+                    <div className="flex justify-center mb-6">
+                        <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-md">
+                            {(isEditing ? name : user.name)?.charAt(0)?.toUpperCase()}
+                        </div>
+                    </div>
+
+                    {!isEditing ? (
+                        // View Mode
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">Name</p>
+                                <p className="text-sm font-semibold text-gray-900">{user.name}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">Email</p>
+                                <p className="text-sm text-gray-900">{user.email}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">Role</p>
+                                <span className="inline-block px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded border border-purple-200 capitalize">
+                                    {user.role}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">Field of Study</p>
+                                <p className="text-sm text-gray-900">{user.fieldOfStudy || "—"}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">Institution</p>
+                                <p className="text-sm text-gray-900">{user.institution || "—"}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">Bio</p>
+                                <p className="text-sm text-gray-700">{user.bio || "No bio yet"}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        // Edit Mode
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">Name</label>
+                                <Input value={name} onChange={e => setName(e.target.value)} className="text-sm" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                                <p className="text-sm text-gray-400">{user.email}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">Cannot be changed</p>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Role</label>
+                                <span className="inline-block px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded border border-purple-200 capitalize">
+                                    {user.role}
+                                </span>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">Field of Study</label>
+                                <Input value={fieldOfStudy} onChange={e => setFieldOfStudy(e.target.value)} className="text-sm" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">Institution</label>
+                                <Input value={institution} onChange={e => setInstitution(e.target.value)} className="text-sm" />
+                            </div>
+                            <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-xs font-medium text-gray-700">Bio</label>
+                                    <span className="text-xs text-gray-400">{bio.length}/300</span>
+                                </div>
+                                <textarea
+                                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    rows="4"
+                                    maxLength={300}
+                                    value={bio}
+                                    onChange={e => setBio(e.target.value)}
+                                    placeholder="Tell us about yourself..."
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <Button onClick={() => setIsEditing(false)} variant="outline" className="flex-1 text-sm">
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSubmit} disabled={saving} className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm disabled:opacity-50">
+                                    {saving ? "Saving..." : "Save"}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
