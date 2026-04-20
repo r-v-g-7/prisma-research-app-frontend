@@ -14,6 +14,7 @@ import { CreateWorkspace } from "./pages/CreateWorkspace";
 import { Navigate } from "react-router-dom";
 import WorkspaceDetail from "./pages/WorkspaceDetail";
 import Profile from "./pages/Profile";
+import SearchResults from "./pages/SearchResults";
 
 function App() {
   return (
@@ -72,6 +73,8 @@ function App() {
                 <Profile />
               }
             />
+
+            <Route path="/search" element={<SearchResults />} />
           </Route>
 
         </Routes>

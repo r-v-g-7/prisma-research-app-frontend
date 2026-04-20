@@ -3,6 +3,7 @@ import { AuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
+import SearchBar from "./SearchBar";
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
