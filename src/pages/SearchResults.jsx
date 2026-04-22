@@ -3,59 +3,91 @@ import { useSearchParams, Link } from "react-router-dom";
 
 const SearchResults = () => {
     const [searchParams] = useSearchParams();
-    const q = searchParams.get("q");
+    const q = searchParams.get("q") || "";
+
     const [results, setResults] = useState({ users: [], workspaces: [], posts: [] });
     const [loading, setLoading] = useState(false);
-    const [type, setType] = useState(""); // post type filter
+
+    const [entity, setEntity] = useState("all");
+    const [type, setType] = useState("");
+
+    // Reset type if not viewing posts
+    useEffect(() => {
+        if (entity !== "posts") {
+            setType("");
+        }
+    }, [entity]);
 
     useEffect(() => {
         if (!q) return;
+
         const fetchResults = async () => {
             try {
                 setLoading(true);
+
                 const res = await fetch(
-                    `/api/search?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ""}`,
+                    `/api/search?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ""}${entity !== "all" ? `&entity=${entity}` : ""}`,
                     {
                         headers: {
                             Authorization: `Bearer ${localStorage.getItem("token")}`,
                         },
                     }
                 );
+
                 const data = await res.json();
                 if (data.success) setResults(data.data);
+
             } catch (err) {
                 console.error(err);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchResults();
-    }, [q, type]);
+    }, [q, type, entity]);
 
     return (
         <div className="max-w-3xl mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold mb-2">Results for "{q}"</h1>
+            <h1 className="text-2xl font-bold mb-4">Results for "{q}"</h1>
 
-            {/* Post type filter */}
-            <div className="flex gap-2 mb-6 flex-wrap">
-                {["", "research", "question", "announcement", "study"].map((t) => (
+            {/* ENTITY FILTER */}
+            <div className="flex gap-2 mb-4">
+                {["all", "posts", "workspaces", "users"].map((e) => (
                     <button
-                        key={t}
-                        onClick={() => setType(t)}
-                        className={`px-3 py-1 rounded-full text-sm border ${type === t
-                            ? "bg-purple-600 text-white border-purple-600"
-                            : "border-gray-300 text-gray-600 hover:border-purple-400"
+                        key={e}
+                        onClick={() => setEntity(e)}
+                        className={`px-4 py-1.5 rounded-full text-sm border transition ${entity === e
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "border-gray-300 text-gray-600 hover:border-blue-400"
                             }`}
                     >
-                        {t === "" ? "All" : t.charAt(0).toUpperCase() + t.slice(1)}
+                        {e.charAt(0).toUpperCase() + e.slice(1)}
                     </button>
                 ))}
             </div>
 
+            {/* TYPE FILTER (ONLY FOR POSTS) */}
+            {entity === "posts" && (
+                <div className="mb-6">
+                    <select
+                        value={type}
+                        onChange={(e) => setType(e.target.value)}
+                        className="border px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                        <option value="">All Types</option>
+                        <option value="research">Research</option>
+                        <option value="question">Question</option>
+                        <option value="announcement">Announcement</option>
+                        <option value="study">Study</option>
+                    </select>
+                </div>
+            )}
+
             {loading && <p className="text-gray-500">Searching...</p>}
 
-            {/* Workspaces */}
-            {results.workspaces.length > 0 && (
+            {/* WORKSPACES */}
+            {(entity === "all" || entity === "workspaces") && results.workspaces.length > 0 && (
                 <section className="mb-8">
                     <h2 className="text-lg font-semibold mb-3 text-purple-700">Workspaces</h2>
                     {results.workspaces.map((ws) => (
@@ -64,36 +96,45 @@ const SearchResults = () => {
                             key={ws._id}
                             className="block p-4 border rounded-lg mb-2 hover:border-purple-400 transition"
                         >
-                            <p className="font-medium">{ws.name}</p>
+                            <p className="font-medium">{ws.title}</p>
                             <p className="text-sm text-gray-500">{ws.description}</p>
+
+                            {ws.creator && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Created by {ws.creator.name}
+                                </p>
+                            )}
                         </Link>
                     ))}
                 </section>
             )}
 
-            {/* Posts */}
-            {results.posts.length > 0 && (
+            {/* POSTS */}
+            {(entity === "all" || entity === "posts") && results.posts.length > 0 && (
                 <section className="mb-8">
                     <h2 className="text-lg font-semibold mb-3 text-purple-700">Posts</h2>
                     {results.posts.map((post) => (
-                        <div key={post._id} className="p-4 border rounded-lg mb-2">
-                            <p className="text-sm text-gray-400 mb-1">
-                                {post.author?.name} in{" "}
-                                <span className="text-purple-600">{post.workspace?.name}</span>
-                                {post.type && (
-                                    <span className="ml-2 bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">
-                                        {post.type}
-                                    </span>
-                                )}
-                            </p>
-                            <p className="text-sm">{post.content}</p>
-                        </div>
+                        <Link to={`/post/${post._id}`} key={post._id}>
+                            <div className="p-4 border rounded-lg mb-2 hover:border-purple-400 transition cursor-pointer">
+                                <p className="text-sm text-gray-400 mb-1">
+                                    {post.author?.name}
+                                </p>
+
+                                <p className="font-medium text-gray-900 mb-1">
+                                    {post.title}
+                                </p>
+
+                                <p className="text-sm text-gray-600">
+                                    {post.content}
+                                </p>
+                            </div>
+                        </Link>
                     ))}
                 </section>
             )}
 
-            {/* Users */}
-            {results.users.length > 0 && (
+            {/* USERS */}
+            {(entity === "all" || entity === "users") && results.users.length > 0 && (
                 <section className="mb-8">
                     <h2 className="text-lg font-semibold mb-3 text-purple-700">Users</h2>
                     {results.users.map((user) => (
@@ -106,10 +147,16 @@ const SearchResults = () => {
             )}
 
             {!loading &&
-                results.users.length === 0 &&
-                results.workspaces.length === 0 &&
-                results.posts.length === 0 && (
-                    <p className="text-gray-500">No results found for "{q}"</p>
+                (
+                    (entity === "all" &&
+                        results.users.length === 0 &&
+                        results.workspaces.length === 0 &&
+                        results.posts.length === 0) ||
+                    (entity === "users" && results.users.length === 0) ||
+                    (entity === "workspaces" && results.workspaces.length === 0) ||
+                    (entity === "posts" && results.posts.length === 0)
+                ) && (
+                    <p className="text-gray-500">No results found</p>
                 )}
         </div>
     );
