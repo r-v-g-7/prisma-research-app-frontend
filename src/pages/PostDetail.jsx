@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchPost } from "@/services/post";
 import { createComment, fetchComments } from "@/services/comments";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ const PostDetail = () => {
     const [loading, setLoading] = useState(true);
     const [comments, setComments] = useState([]);
     const [submitting, setSubmitting] = useState(false);
+    const [commentError, setCommentError] = useState("");
     const commentRef = useRef(null);
 
     useEffect(() => {
@@ -30,7 +31,7 @@ const PostDetail = () => {
     const loadComments = async () => {
         try {
             const data = await fetchComments(postId);
-            setComments(data.data);
+            setComments(data.data || []);
         } catch (err) {
             console.error(err);
         }
@@ -41,13 +42,19 @@ const PostDetail = () => {
     }, [postId]);
 
     const handleCommentSubmit = async () => {
-        if (!commentRef.current.value.trim()) return;
+        const content = commentRef.current?.value?.trim();
+        if (!content) return;
         setSubmitting(true);
-        const content = commentRef.current.value;
-        await createComment(postId, content);
-        loadComments();
-        commentRef.current.value = "";
-        setSubmitting(false);
+        setCommentError("");
+        try {
+            await createComment(postId, content);
+            if (commentRef.current) commentRef.current.value = "";
+            loadComments();
+        } catch (err) {
+            setCommentError(err.message || "Failed to post comment");
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const getPostTypeDisplay = (type) => {
@@ -61,13 +68,11 @@ const PostDetail = () => {
     };
 
     if (loading) {
-        // PostDetail.jsx - Update the outermost div
         return (
-            <div className="bg-gray-50">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-                    {/* rest stays same */}
-                    <div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading post...</p>
+            <div className="bg-gray-50 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-gray-600 text-sm font-medium">Loading discussion...</p>
                 </div>
             </div>
         );
@@ -89,7 +94,7 @@ const PostDetail = () => {
     const postTypeInfo = getPostTypeDisplay(post.type);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 pb-12">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 {/* Back Button */}
                 <button
@@ -101,7 +106,7 @@ const PostDetail = () => {
                 </button>
 
                 {/* Post Container */}
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6 shadow-sm">
                     <div className="p-6 sm:p-8">
                         {/* Author Header */}
                         <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-100">
@@ -133,16 +138,45 @@ const PostDetail = () => {
                             <div className="prose prose-gray max-w-none">
                                 <p className="text-gray-700 text-base sm:text-lg leading-relaxed whitespace-pre-wrap">{post.content}</p>
                             </div>
+
+                            {post.tags && post.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-gray-100">
+                                    {post.tags.map((tag, i) => (
+                                        <span key={i} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-600 rounded-md">
+                                            #{tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </article>
                     </div>
                 </div>
 
+                {/* Workspace Collaboration CTA (Core MVP Bridge) */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 sm:p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                    <div>
+                        <h3 className="text-base font-bold text-blue-900 flex items-center gap-2">
+                            <span>🤝</span>
+                            <span>Turn this discussion into a Collaborative Workspace</span>
+                        </h3>
+                        <p className="text-xs sm:text-sm text-blue-700 mt-1">
+                            Conduct experiments, draft research notes, track tasks, and collaborate with commenters in a private team workspace.
+                        </p>
+                    </div>
+                    <Button
+                        onClick={() => navigate(`/workspace/create?postId=${post._id}&title=${encodeURIComponent(post.title)}`)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs sm:text-sm whitespace-nowrap shadow"
+                    >
+                        + Start Research Workspace
+                    </Button>
+                </div>
+
                 {/* Comments Section */}
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
                     <div className="p-6 sm:p-8">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-gray-900">
-                                Discussion <span className="text-gray-400 font-normal text-base">({comments?.length || 0})</span>
+                                Intellectual Discussion <span className="text-gray-400 font-normal text-base">({comments?.length || 0})</span>
                             </h2>
                         </div>
 
@@ -150,15 +184,18 @@ const PostDetail = () => {
                         <div className="mb-8">
                             <textarea
                                 ref={commentRef}
-                                className="w-full p-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
-                                rows="4"
-                                placeholder="Share your thoughts..."
+                                className="w-full p-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400 text-sm"
+                                rows="3"
+                                placeholder="Contribute your perspective, methodology advice, or propose a collaboration..."
                             />
+                            {commentError && (
+                                <p className="text-xs text-red-500 mt-2">{commentError}</p>
+                            )}
                             <div className="flex justify-end mt-3">
                                 <Button
                                     onClick={handleCommentSubmit}
                                     disabled={submitting}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 text-sm font-medium disabled:opacity-50"
                                 >
                                     {submitting ? "Posting..." : "Post Comment"}
                                 </Button>
@@ -168,24 +205,27 @@ const PostDetail = () => {
                         {/* Comments List */}
                         <div className="space-y-4">
                             {comments?.length === 0 && (
-                                <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-                                    <p className="text-gray-500">No comments yet. Start the discussion!</p>
+                                <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-lg">
+                                    <p className="text-gray-500 text-sm">No comments yet. Be the first to contribute to this research discussion!</p>
                                 </div>
                             )}
 
                             {comments?.map((comment) => (
-                                <div key={comment._id} className="border border-gray-200 rounded-lg p-5 hover:bg-gray-50 transition-colors">
+                                <div key={comment._id} className="border border-gray-200 rounded-lg p-4 sm:p-5 hover:bg-gray-50 transition-colors">
                                     <div className="flex items-start gap-3">
                                         <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center font-semibold text-sm flex-shrink-0">
                                             {comment.author?.name?.charAt(0)?.toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
+                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                 <p className="font-semibold text-gray-900 text-sm">{comment.author?.name}</p>
                                                 <span className="text-xs text-gray-400">•</span>
                                                 <p className="text-xs text-gray-500 capitalize">{comment.author?.role}</p>
+                                                {comment.author?.institution && (
+                                                    <span className="text-xs text-gray-400">({comment.author.institution})</span>
+                                                )}
                                             </div>
-                                            <p className="text-gray-700 text-sm leading-relaxed">{comment.content}</p>
+                                            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{comment.content}</p>
                                         </div>
                                     </div>
                                 </div>

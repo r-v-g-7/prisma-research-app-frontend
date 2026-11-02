@@ -14,7 +14,7 @@ export const fetchWorkspaces = async () => {
     }
 
     return response.json();
-}
+};
 
 export const createWorkspace = async (workspaceData) => {
     const token = localStorage.getItem('token');
@@ -28,17 +28,15 @@ export const createWorkspace = async (workspaceData) => {
         body: JSON.stringify(workspaceData)
     });
 
+    const data = await response.json();
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create workspace");
+        throw new Error(data.message || "Failed to create workspace");
     }
 
-    return response.json();
-}
-
+    return data;
+};
 
 export const workspaceInfo = async (workspaceId) => {
-
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -61,58 +59,116 @@ export const workspaceInfo = async (workspaceId) => {
     return data;
 };
 
-
 export const joinWorkspace = async (workspaceId) => {
     const token = localStorage.getItem('token');
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/workspace/join/${workspaceId}`, {
-            method: "POST",
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message);
+    const response = await fetch(`${API_BASE_URL}/workspace/join/${workspaceId}`, {
+        method: "POST",
+        headers: {
+            'Authorization': `Bearer ${token}`
         }
+    });
 
-        console.log("Joined workspace:", data);
-        return data;
+    const data = await response.json();
 
-    } catch (err) {
-        console.error("Failed to join workspace:", err.message);
-        // Show toast / error UI here
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to join workspace");
     }
+
+    return data;
 };
 
+export const inviteMember = async (workspaceId, { email, inviteeId }) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/workspace/invite/${workspaceId}`, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ email, inviteeId })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to invite member");
+    }
+    return data;
+};
 
 export const leaveWorkspace = async (workspaceId) => {
     const token = localStorage.getItem('token');
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/workspace/leave/${workspaceId}`, {
-            method: "POST",
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message);
+    const response = await fetch(`${API_BASE_URL}/workspace/leave/${workspaceId}`, {
+        method: "POST",
+        headers: {
+            'Authorization': `Bearer ${token}`
         }
+    });
 
-        console.log("Left workspace:", data);
-        return data;
+    const data = await response.json();
 
-    } catch (err) {
-        console.error("Failed to join workspace:", err.message);
-        // Show toast / error UI here
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to leave workspace");
     }
+
+    return data;
 };
 
+export const addWorkspaceNote = async (workspaceId, noteData) => {
+    const token = localStorage.getItem('token');
 
+    const response = await fetch(`${API_BASE_URL}/workspace/${workspaceId}/notes`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(noteData)
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to add note");
+    }
+    return data;
+};
+
+export const addWorkspaceTask = async (workspaceId, taskData) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/workspace/${workspaceId}/tasks`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(taskData)
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to add task");
+    }
+    return data;
+};
+
+export const updateWorkspaceTask = async (workspaceId, taskId, status) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/workspace/${workspaceId}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to update task");
+    }
+    return data;
+};

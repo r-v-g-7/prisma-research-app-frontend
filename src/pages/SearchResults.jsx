@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
+import { API_BASE_URL } from "@/services/config";
 
 const SearchResults = () => {
     const [searchParams] = useSearchParams();
@@ -26,7 +27,7 @@ const SearchResults = () => {
                 setLoading(true);
 
                 const res = await fetch(
-                    `/api/search?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ""}${entity !== "all" ? `&entity=${entity}` : ""}`,
+                    `${API_BASE_URL}/api/search?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ""}${entity !== "all" ? `&entity=${entity}` : ""}`,
                     {
                         headers: {
                             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -73,7 +74,7 @@ const SearchResults = () => {
                     <select
                         value={type}
                         onChange={(e) => setType(e.target.value)}
-                        className="border px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="border px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         <option value="">All Types</option>
                         <option value="research">Research</option>
@@ -89,19 +90,19 @@ const SearchResults = () => {
             {/* WORKSPACES */}
             {(entity === "all" || entity === "workspaces") && results.workspaces.length > 0 && (
                 <section className="mb-8">
-                    <h2 className="text-lg font-semibold mb-3 text-purple-700">Workspaces</h2>
+                    <h2 className="text-lg font-semibold mb-3 text-blue-700">Workspaces</h2>
                     {results.workspaces.map((ws) => (
                         <Link
                             to={`/workspace/${ws._id}`}
                             key={ws._id}
-                            className="block p-4 border rounded-lg mb-2 hover:border-purple-400 transition"
+                            className="block p-4 border rounded-lg mb-2 hover:border-blue-400 transition"
                         >
-                            <p className="font-medium">{ws.title}</p>
+                            <p className="font-medium text-gray-900">{ws.title}</p>
                             <p className="text-sm text-gray-500">{ws.description}</p>
 
                             {ws.creator && (
                                 <p className="text-xs text-gray-400 mt-1">
-                                    Created by {ws.creator.name}
+                                    Led by {ws.creator.name} ({ws.creator.role})
                                 </p>
                             )}
                         </Link>
@@ -112,10 +113,10 @@ const SearchResults = () => {
             {/* POSTS */}
             {(entity === "all" || entity === "posts") && results.posts.length > 0 && (
                 <section className="mb-8">
-                    <h2 className="text-lg font-semibold mb-3 text-purple-700">Posts</h2>
+                    <h2 className="text-lg font-semibold mb-3 text-blue-700">Research Discussions</h2>
                     {results.posts.map((post) => (
                         <Link to={`/post/${post._id}`} key={post._id}>
-                            <div className="p-4 border rounded-lg mb-2 hover:border-purple-400 transition cursor-pointer">
+                            <div className="p-4 border rounded-lg mb-2 hover:border-blue-400 transition cursor-pointer">
                                 <p className="text-sm text-gray-400 mb-1">
                                     {post.author?.name}
                                 </p>
@@ -124,7 +125,7 @@ const SearchResults = () => {
                                     {post.title}
                                 </p>
 
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-gray-600 line-clamp-2">
                                     {post.content}
                                 </p>
                             </div>
@@ -136,11 +137,19 @@ const SearchResults = () => {
             {/* USERS */}
             {(entity === "all" || entity === "users") && results.users.length > 0 && (
                 <section className="mb-8">
-                    <h2 className="text-lg font-semibold mb-3 text-purple-700">Users</h2>
-                    {results.users.map((user) => (
-                        <div key={user._id} className="p-4 border rounded-lg mb-2">
-                            <p className="font-medium">{user.name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
+                    <h2 className="text-lg font-semibold mb-3 text-blue-700">Researchers & Academics</h2>
+                    {results.users.map((u) => (
+                        <div key={u._id} className="p-4 border rounded-lg mb-2 bg-white flex items-center justify-between">
+                            <div>
+                                <p className="font-medium text-gray-900">{u.name}</p>
+                                <p className="text-xs text-gray-500 capitalize">{u.role} {u.institution && `• ${u.institution}`}</p>
+                                {u.fieldOfStudy && (
+                                    <span className="inline-block mt-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs rounded border border-emerald-200">
+                                        {u.fieldOfStudy}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="text-xs text-gray-400">{u.email}</span>
                         </div>
                     ))}
                 </section>

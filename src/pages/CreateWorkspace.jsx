@@ -1,16 +1,20 @@
-import React from 'react'
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { createWorkspace } from '@/services/workspace';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export const CreateWorkspace = () => {
+    const [searchParams] = useSearchParams();
+    const postId = searchParams.get("postId") || "";
+    const postTitle = searchParams.get("title") || "";
 
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [workspaceType, setWorkspaceType] = useState("");
-    const [privacy, setPrivacy] = useState("");
+    const [title, setTitle] = useState(postTitle ? `Project: ${postTitle}` : "");
+    const [description, setDescription] = useState(
+        postTitle ? `Collaborative research project initiated from discussion: "${postTitle}"` : ""
+    );
+    const [workspaceType, setWorkspaceType] = useState("research");
+    const [privacy, setPrivacy] = useState("private");
     const [tags, setTags] = useState("");
     const [errors, setErrors] = useState({});
     const [showSuccess, setShowSuccess] = useState(false);
@@ -24,8 +28,8 @@ export const CreateWorkspace = () => {
         if (!title.trim() || title.trim().length < 5) {
             newErrors.title = "Title must be at least 5 characters";
         }
-        if (!description.trim() || description.trim().length < 20) {
-            newErrors.description = "Description must be at least 20 characters";
+        if (!description.trim() || description.trim().length < 15) {
+            newErrors.description = "Description must be at least 15 characters";
         }
         if (!workspaceType) {
             newErrors.workspaceType = "Workspace type is required";
@@ -34,7 +38,7 @@ export const CreateWorkspace = () => {
             newErrors.privacy = "Privacy setting is required";
         }
         return newErrors;
-    }
+    };
 
     const handleSubmit = async () => {
         setErrorMessage("");
@@ -49,194 +53,183 @@ export const CreateWorkspace = () => {
 
         try {
             setLoading(true);
-            const workspaceData = { title, description, type: workspaceType, privacy, tags: tagsArr };
-            console.log("Workspace data send: ", workspaceData);
+            const workspaceData = {
+                title: title.trim(),
+                description: description.trim(),
+                type: workspaceType,
+                privacy,
+                tags: tagsArr,
+                postId: postId || undefined
+            };
 
             const data = await createWorkspace(workspaceData);
-            console.log("workspace data received", data);
-
             setLoading(false);
             setShowSuccess(true);
 
             setTimeout(() => {
-                setTitle("");
-                setDescription("");
-                setPrivacy("");
-                setTags("");
-                setWorkspaceType("");
-                setShowSuccess(false);
-                navigate("/workspaces");
-            }, 1500);
+                navigate(`/workspace/${data.data._id}`);
+            }, 1000);
 
         } catch (err) {
             setLoading(false);
-            console.error(err.message);
-            setErrorMessage(err.response?.data?.message || "Something went wrong. Please try again.");
+            setErrorMessage(err.message || "Failed to create workspace");
         }
-    }
+    };
 
     const handleCancel = () => {
-        navigate("/feed");
-        setTitle("");
-        setDescription("");
-        setPrivacy("");
-        setTags("");
-        setWorkspaceType("");
-    }
-
-    const parsedTags = tags.trim().split(",").map(e => e.trim()).filter(Boolean);
+        navigate(-1);
+    };
 
     return (
-        <div className="max-w-3xl mx-auto p-6">
-            <h1 className="text-3xl font-bold mb-6">Create Workspace</h1>
-
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
-                    Workspace Title
-                    <span className="text-gray-500 ml-2 text-xs">
-                        {100 - title.length}
-                    </span>
-                </label>
-                <Input
-                    placeholder="e.g., Machine Learning Research Group"
-                    maxLength={100}
-                    value={title}
-                    onChange={e => setTitle(e.target.value)}
-                />
-                {errors.title && (
-                    <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-                )}
-            </div>
-
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Workspace Type</label>
-                <select
-                    className="w-full p-2 border rounded"
-                    value={workspaceType}
-                    onChange={e => setWorkspaceType(e.target.value)}
-                >
-                    <option value="">Select type...</option>
-                    <option value="research">🔬 Research Project</option>
-                    <option value="study">📚 Study Group</option>
-                    <option value="lab">🧪 Lab Team</option>
-                </select>
-                {errors.workspaceType && (
-                    <p className="text-red-500 text-sm mt-1">{errors.workspaceType}</p>
-                )}
-            </div>
-
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Privacy</label>
-                <select
-                    className="w-full p-2 border rounded"
-                    value={privacy}
-                    onChange={e => setPrivacy(e.target.value)}
-                >
-                    <option value="">Select privacy...</option>
-                    <option value="public">🌐 Public (Discoverable)</option>
-                    <option value="private">🔒 Private (Invite Only)</option>
-                </select>
-                {errors.privacy && (
-                    <p className="text-red-500 text-sm mt-1">{errors.privacy}</p>
-                )}
-            </div>
-
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
-                    Tags
-                    <span className="text-gray-400 ml-2 text-xs">
-                        (comma separated, e.g., AI, Machine Learning, NLP)
-                    </span>
-                </label>
-                <Input
-                    placeholder="AI, Machine Learning, Research"
-                    value={tags}
-                    onChange={e => setTags(e.target.value)}
-                />
-                {errors.tags && (
-                    <p className="text-red-500 text-sm mt-1">{errors.tags}</p>
-                )}
-            </div>
-
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
-                    Description
-                    <span className="text-gray-500 ml-2 text-xs">
-                        {500 - description.length}
-                    </span>
-                </label>
-                <textarea
-                    className="w-full p-3 border rounded resize-none"
-                    rows="6"
-                    placeholder="Describe what this workspace is about..."
-                    maxLength={500}
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                />
-                {errors.description && (
-                    <p className="text-red-500 text-sm mt-1">{errors.description}</p>
-                )}
-            </div>
-
-            <div className="mb-6 p-4 bg-gray-50 rounded border">
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">Preview</h3>
-                <div className="bg-white p-6 rounded shadow-md border">
-                    <h3 className="text-xl font-bold mb-2">
-                        {title || <span className="text-gray-300">Workspace Title</span>}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-1">
-                        {workspaceType || <span className="text-gray-300">Type</span>}
+        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mx-auto">
+                {/* Header */}
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-gray-900">Create Research Workspace</h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Set up a collaborative space to conduct research, document notes, and coordinate tasks.
                     </p>
-                    <p className="text-sm text-gray-500 mb-3">
-                        {privacy || <span className="text-gray-300">Privacy</span>}
-                    </p>
-                    {parsedTags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {parsedTags.map((tag, index) => (
-                                <span
-                                    key={index}
-                                    className="bg-blue-100 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full"
-                                >
-                                    {tag}
-                                </span>
-                            ))}
+                    {postId && (
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-xs text-blue-800">
+                            <span>🔗</span>
+                            <span>Linking to Discussion: <strong>{postTitle}</strong></span>
                         </div>
                     )}
-                    <p className="text-gray-600 text-sm mt-3">
-                        {description || <span className="text-gray-300">Description will appear here...</span>}
-                    </p>
+                </div>
+
+                {/* Form Card */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-6">
+                    {errorMessage && (
+                        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+                            {errorMessage}
+                        </div>
+                    )}
+                    {showSuccess && (
+                        <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
+                            ✓ Workspace created successfully! Redirecting...
+                        </div>
+                    )}
+
+                    {/* Title */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                            Workspace Title <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                            placeholder="e.g. Edge Transformer Architecture Study"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="text-sm"
+                        />
+                        {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                            Description & Research Objectives <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            rows="4"
+                            placeholder="Explain the research questions, methodologies, and goals of this project..."
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                        />
+                        {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
+                    </div>
+
+                    {/* Type and Privacy Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                                Workspace Type
+                            </label>
+                            <div className="flex gap-2">
+                                {["research", "study", "lab"].map(t => (
+                                    <button
+                                        type="button"
+                                        key={t}
+                                        onClick={() => setWorkspaceType(t)}
+                                        className={`flex-1 py-2 text-xs font-medium rounded-lg border capitalize transition ${
+                                            workspaceType === t
+                                                ? "bg-blue-600 text-white border-blue-600"
+                                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        {t}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                                Access Privacy
+                            </label>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setPrivacy("private")}
+                                    className={`flex-1 py-2 text-xs font-medium rounded-lg border transition ${
+                                        privacy === "private"
+                                            ? "bg-blue-600 text-white border-blue-600"
+                                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    🔒 Private (Invite Only)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPrivacy("public")}
+                                    className={`flex-1 py-2 text-xs font-medium rounded-lg border transition ${
+                                        privacy === "public"
+                                            ? "bg-blue-600 text-white border-blue-600"
+                                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    🌐 Public
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Tags */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                            Tags (comma separated)
+                        </label>
+                        <Input
+                            placeholder="AI, Transformers, Edge Computing, PyTorch"
+                            value={tags}
+                            onChange={(e) => setTags(e.target.value)}
+                            className="text-sm"
+                        />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleCancel}
+                            className="text-sm"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-6"
+                        >
+                            {loading ? "Creating..." : "Create Workspace"}
+                        </Button>
+                    </div>
                 </div>
             </div>
-
-            <div className="flex gap-4">
-                <Button
-                    onClick={handleCancel}
-                    className="flex-1 bg-gray-500 text-white hover:bg-gray-600"
-                >
-                    Cancel
-                </Button>
-                {loading ? (
-                    <p className="flex-1 text-center text-gray-500 self-center">Loading.....</p>
-                ) : (
-                    <Button
-                        onClick={handleSubmit}
-                        className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                        Create Workspace
-                    </Button>
-                )}
-            </div>
-
-            {showSuccess && (
-                <div className="mt-4 mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-                    ✅ Workspace created successfully! Redirecting...
-                </div>
-            )}
-            {errorMessage && (
-                <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
-                    {errorMessage}
-                </div>
-            )}
         </div>
-    )
-}
+    );
+};
+
+export default CreateWorkspace;

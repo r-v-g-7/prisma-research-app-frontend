@@ -1,5 +1,4 @@
-// Register.jsx
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,23 +18,45 @@ const Register = () => {
   const passwordRef = useRef(null);
   const fieldOfStudyRef = useRef(null);
   const institutionRef = useRef(null);
-  const [role, setRole] = useState(null);
+  const [role, setRole] = useState("student");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const { login, user } = useContext(AuthContext);
 
-  const handleSubmit = async () => {
-    const name = nameRef.current.value;
-    const email = emailRef.current.value;
-    const password = passwordRef.current.value;
-    const institution = institutionRef.current.value;
-    const fieldOfStudy = fieldOfStudyRef.current.value;
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setError("");
+
+    const name = nameRef.current?.value?.trim();
+    const email = emailRef.current?.value?.trim();
+    const password = passwordRef.current?.value;
+    const institution = institutionRef.current?.value?.trim();
+    const fieldOfStudy = fieldOfStudyRef.current?.value?.trim();
+
+    if (!name || !email || !password || !role || !institution || !fieldOfStudy) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
 
     try {
+      setLoading(true);
       const response = await registerUser({ name, email, password, role, institution, fieldOfStudy });
-      login(response.data);
+      if (response?.data?.user && response?.data?.token) {
+        login(response.data);
+      } else {
+        navigate("/login");
+      }
     } catch (err) {
-      console.error("Register Failed: ", err);
+      setError(err.message || "Registration failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,48 +80,63 @@ const Register = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Create account</h2>
 
-          <div className="space-y-3.5">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Full Name</label>
-              <Input placeholder="John Doe" ref={nameRef} className="text-sm" />
+              <Input placeholder="Dr. Jane Doe / Alex Smith" ref={nameRef} className="text-sm" />
             </div>
+
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Email</label>
-              <Input type="email" placeholder="your@email.com" ref={emailRef} className="text-sm" />
+              <Input type="email" placeholder="your@institution.edu" ref={emailRef} className="text-sm" />
             </div>
+
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Password</label>
               <Input type="password" placeholder="••••••••" ref={passwordRef} className="text-sm" />
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Role</label>
-              <Select onValueChange={setRole}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="Select your role" />
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Academic Role</label>
+              <Select value={role} onValueChange={(val) => setRole(val)}>
+                <SelectTrigger className="w-full text-sm">
+                  <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="professor">Professor</SelectItem>
+                  <SelectItem value="student">Student / Researcher</SelectItem>
+                  <SelectItem value="professor">Professor / Principal Investigator</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Institution</label>
-              <Input placeholder="University Name" ref={institutionRef} className="text-sm" />
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Institution / University</label>
+              <Input placeholder="e.g. IIT Bombay / Stanford University" ref={institutionRef} className="text-sm" />
             </div>
+
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Field of Study</label>
-              <Input placeholder="Computer Science" ref={fieldOfStudyRef} className="text-sm" />
+              <Input placeholder="e.g. Computer Science, Quantum Physics" ref={fieldOfStudyRef} className="text-sm" />
             </div>
-          </div>
 
-          <Button onClick={handleSubmit} className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2.5 text-sm font-medium">
-            Create account
-          </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 text-sm mt-2"
+            >
+              {loading ? "Creating account..." : "Create Account"}
+            </Button>
+          </div>
 
           <p className="text-center text-xs text-gray-600 mt-6">
             Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
               Sign in
             </Link>
           </p>
