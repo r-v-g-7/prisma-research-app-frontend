@@ -1,9 +1,8 @@
 import { BrowserRouter } from "react-router-dom";
 import Login from "./pages/Login";
 import Feed from "./pages/Feed";
-import Register from "./pages/Register"
-import { Route } from "react-router-dom";
-import { Routes } from "react-router-dom";
+import Register from "./pages/Register";
+import { Route, Routes, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
@@ -11,9 +10,10 @@ import PostDetail from "./pages/PostDetail";
 import CreatePost from "./pages/CreatePost";
 import { Workspaces } from "./pages/Workspaces";
 import { CreateWorkspace } from "./pages/CreateWorkspace";
-import { Navigate } from "react-router-dom";
 import WorkspaceDetail from "./pages/WorkspaceDetail";
 import Profile from "./pages/Profile";
+import PublicProfile from "./pages/PublicProfile";
+import SavedResearch from "./pages/SavedResearch";
 import SearchResults from "./pages/SearchResults";
 
 function App() {
@@ -31,49 +31,15 @@ function App() {
             </ProtectedRoute>
           }
           >
-            <Route
-              path='/feed'
-              element={
-                <Feed />
-              }
-            />
-            <Route
-              path='/post/:postId'
-              element={
-                <PostDetail />
-              }
-            />
-            <Route
-              path='/create-post'
-              element={
-                <CreatePost />
-              }
-            />
-            <Route
-              path='/workspaces'
-              element={
-                <Workspaces />
-              }
-            />
-            <Route
-              path='/workspace/create'
-              element={
-                <CreateWorkspace />
-              }
-            />
-            <Route
-              path='/workspace/:id'
-              element={
-                <WorkspaceDetail />
-              }
-            />
-            <Route
-              path='/profile'
-              element={
-                <Profile />
-              }
-            />
-
+            <Route path='/feed' element={<Feed />} />
+            <Route path='/post/:postId' element={<PostDetail />} />
+            <Route path='/create-post' element={<CreatePost />} />
+            <Route path='/workspaces' element={<Workspaces />} />
+            <Route path='/workspace/create' element={<CreateWorkspace />} />
+            <Route path='/workspace/:id' element={<WorkspaceDetail />} />
+            <Route path='/saved' element={<SavedResearch />} />
+            <Route path='/profile' element={<Profile />} />
+            <Route path='/profile/:userId' element={<PublicProfile />} />
             <Route path="/search" element={<SearchResults />} />
           </Route>
 

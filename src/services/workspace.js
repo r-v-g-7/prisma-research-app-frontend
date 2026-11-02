@@ -116,6 +116,25 @@ export const leaveWorkspace = async (workspaceId) => {
     return data;
 };
 
+export const updateWorkspaceBrief = async (workspaceId, briefData) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/workspace/${workspaceId}/brief`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(briefData)
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to update research brief");
+    }
+    return data;
+};
+
 export const addWorkspaceNote = async (workspaceId, noteData) => {
     const token = localStorage.getItem('token');
 
@@ -169,6 +188,82 @@ export const updateWorkspaceTask = async (workspaceId, taskId, status) => {
     const data = await response.json();
     if (!response.ok) {
         throw new Error(data.message || "Failed to update task");
+    }
+    return data;
+};
+
+export const addWorkspaceEvidence = async (workspaceId, evidenceData) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/workspace/${workspaceId}/evidence`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(evidenceData)
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to add evidence");
+    }
+    return data;
+};
+
+export const updateWorkspaceEvidenceStatus = async (workspaceId, evidenceId, status) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/workspace/${workspaceId}/evidence/${evidenceId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to update evidence status");
+    }
+    return data;
+};
+
+export const addWorkspaceDecision = async (workspaceId, decisionData) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/workspace/${workspaceId}/decisions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(decisionData)
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to record decision");
+    }
+    return data;
+};
+
+export const addWorkspaceReference = async (workspaceId, referenceData) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/workspace/${workspaceId}/references`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(referenceData)
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to add reference");
     }
     return data;
 };

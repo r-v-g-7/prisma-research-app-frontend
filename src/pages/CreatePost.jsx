@@ -4,161 +4,230 @@ import { Button } from "@/components/ui/button";
 import { createPost } from "@/services/post";
 import { useNavigate } from "react-router-dom";
 
+const POST_TYPES = [
+    { id: "research", label: "🔬 Research Discussion", desc: "Analyze papers, theories, or experimental observations" },
+    { id: "question", label: "💡 Research Question", desc: "Pose an open theoretical or empirical research challenge" },
+    { id: "collaboration", label: "🤝 Collaboration Opportunity", desc: "Seek co-authors, lab partners, or technical advisors" },
+    { id: "showcase", label: "🚀 Project Showcase", desc: "Demonstrate a working prototype, dataset, or preprint" },
+    { id: "study", label: "🎓 Study & Methodology", desc: "Share literature surveys, notes, and reproducible recipes" },
+    { id: "announcement", label: "📢 Academic Announcement", desc: "CFP, workshop dates, or lab openings" }
+];
+
 const CreatePost = () => {
     const navigate = useNavigate();
     const [title, setTitle] = useState(() => {
         const draft = localStorage.getItem('post-draft');
         if (!draft) return "";
-        return JSON.parse(draft).title || "";
+        try { return JSON.parse(draft).title || ""; } catch { return ""; }
     });
-    const [content, setContent] = useState("");
-    const [postType, setPostType] = useState("");
+    const [content, setContent] = useState(() => {
+        const draft = localStorage.getItem('post-draft');
+        if (!draft) return "";
+        try { return JSON.parse(draft).content || ""; } catch { return ""; }
+    });
+    const [postType, setPostType] = useState("research");
+    const [tags, setTags] = useState("");
+    const [doi, setDoi] = useState("");
+    const [paperLink, setPaperLink] = useState("");
     const [errors, setErrors] = useState({});
     const [showSuccess, setShowSuccess] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
         const interval = setInterval(() => {
             if (title || content || postType) {
                 localStorage.setItem('post-draft', JSON.stringify({ title, content, postType }));
             }
-        }, 30000);
+        }, 15000);
         return () => clearInterval(interval);
     }, [title, content, postType]);
 
     const validateForm = () => {
         const newErrors = {};
-        if (!title || title.length < 5) newErrors.title = "Title must be at least 5 characters";
-        if (!content || content.length < 20) newErrors.content = "Content must be at least 20 characters";
+        if (!title.trim() || title.trim().length < 5) newErrors.title = "Title must be at least 5 characters";
+        if (!content.trim() || content.trim().length < 20) newErrors.content = "Content must be at least 20 characters";
         if (!postType) newErrors.postType = "Please select a post type";
         return newErrors;
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
         const validationError = validateForm();
         setErrors(validationError);
         if (Object.keys(validationError).length > 0) return;
         if (submitting) return;
+
         setSubmitting(true);
+        setErrorMessage("");
 
         try {
-            const postData = { title, content, type: postType };
-            await createPost(postData);
+            const tagsArr = tags
+                .split(",")
+                .map(t => t.trim().replace(/^#/, ""))
+                .filter(Boolean);
+
+            const postData = {
+                title: title.trim(),
+                content: content.trim(),
+                type: postType,
+                tags: tagsArr,
+                doi: doi.trim() || undefined,
+                paperLink: paperLink.trim() || undefined
+            };
+
+            const res = await createPost(postData);
             setShowSuccess(true);
+            localStorage.removeItem('post-draft');
+
             setTimeout(() => {
-                setTitle("");
-                setContent("");
-                setPostType("");
-                localStorage.removeItem('post-draft');
-                navigate("/feed");
-            }, 1500);
+                navigate(`/post/${res.data._id}`);
+            }, 1000);
         } catch (err) {
-            console.error(err.message);
+            setErrorMessage(err.message || "Failed to publish post");
+        } finally {
+            setSubmitting(false);
         }
-        setSubmitting(false);
     };
 
-    // CreatePost.jsx - Update the outermost div
     return (
-        <div className="bg-gray-50 py-6">
-            <div className="max-w-2xl mx-auto px-4">
-                {/* rest stays same */}
-                {/* Header */}
+        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6">
+            <div className="max-w-3xl mx-auto">
                 <div className="mb-6">
-                    <button onClick={() => navigate('/feed')} className="text-sm text-gray-600 hover:text-gray-900 mb-3 flex items-center gap-1">
-                        ← Back
-                    </button>
-                    <h1 className="text-2xl font-bold text-gray-900">Create Post</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Publish Academic Inquiry</h1>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                        Share ideas, solicit critiques, or propose questions that can evolve into research workspaces.
+                    </p>
                 </div>
 
-                {/* Success Message */}
+                {errorMessage && (
+                    <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl mb-4">
+                        {errorMessage}
+                    </div>
+                )}
                 {showSuccess && (
-                    <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm flex items-center gap-2">
-                        <span>✓</span> Post created! Redirecting...
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl mb-4">
+                        ✓ Published successfully! Redirecting to discussion...
                     </div>
                 )}
 
-                {/* Form */}
-                <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
-                    {/* Post Type */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 sm:p-8 space-y-6">
+                    {/* Content Type Selector */}
                     <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">Type</label>
-                        <select
-                            className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            value={postType}
-                            onChange={e => setPostType(e.target.value)}
-                        >
-                            <option value="">Choose a type</option>
-                            <option value="research">🔬 Research</option>
-                            <option value="question">💡 Question</option>
-                            <option value="announcement">📢 Announcement</option>
-                            <option value="study">🎓 Study</option>
-                        </select>
-                        {errors.postType && <p className="text-xs text-red-600 mt-1">{errors.postType}</p>}
+                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                            Inquiry Category <span className="text-red-500">*</span>
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {POST_TYPES.map(pt => (
+                                <div
+                                    key={pt.id}
+                                    onClick={() => setPostType(pt.id)}
+                                    className={`p-3 rounded-xl border cursor-pointer transition ${
+                                        postType === pt.id
+                                            ? "border-blue-600 bg-blue-50/40 ring-1 ring-blue-500"
+                                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
+                                    }`}
+                                >
+                                    <p className="text-xs font-bold text-gray-900">{pt.label}</p>
+                                    <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">{pt.desc}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Title */}
                     <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="block text-xs font-medium text-gray-700">Title</label>
-                            <span className="text-xs text-gray-400">{title.length}/100</span>
-                        </div>
+                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                            Discussion Title <span className="text-red-500">*</span>
+                        </label>
                         <Input
-                            placeholder="Enter title..."
-                            maxLength={100}
+                            placeholder="e.g. Can FlashAttention-3 be adapted for non-GPU systolic architectures?"
                             value={title}
-                            onChange={e => setTitle(e.target.value)}
+                            onChange={(e) => setTitle(e.target.value)}
                             className="text-sm"
                         />
-                        {errors.title && <p className="text-xs text-red-600 mt-1">{errors.title}</p>}
+                        {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
                     </div>
 
                     {/* Content */}
                     <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="block text-xs font-medium text-gray-700">Content</label>
-                            <span className="text-xs text-gray-400">{content.length}/5000</span>
-                        </div>
+                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                            Detailed Background, Hypothesis, or Question <span className="text-red-500">*</span>
+                        </label>
                         <textarea
-                            className="w-full p-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            rows="10"
-                            placeholder="What's on your mind?"
-                            maxLength={5000}
+                            rows="7"
+                            placeholder="Explain the theoretical context, current bottlenecks, empirical observations, or experimental questions..."
                             value={content}
-                            onChange={e => setContent(e.target.value)}
+                            onChange={(e) => setContent(e.target.value)}
+                            className="w-full p-4 border border-gray-300 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans leading-relaxed"
                         />
-                        {errors.content && <p className="text-xs text-red-600 mt-1">{errors.content}</p>}
+                        {errors.content && <p className="text-xs text-red-500 mt-1">{errors.content}</p>}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-3 pt-2">
-                        <Button
-                            onClick={() => navigate('/feed')}
-                            variant="outline"
-                            className="flex-1 text-sm"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={submitting}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm disabled:opacity-50"
-                        >
-                            {submitting ? "Publishing..." : "Publish"}
-                        </Button>
+                    {/* Tags */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                            Keywords & Topics (comma separated)
+                        </label>
+                        <Input
+                            placeholder="Transformers, Hardware, SystolicArrays, PyTorch"
+                            value={tags}
+                            onChange={(e) => setTags(e.target.value)}
+                            className="text-xs sm:text-sm"
+                        />
+                    </div>
+
+                    {/* Academic Reference DOI and Paper Link (Optional) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                                Citation DOI (Optional)
+                            </label>
+                            <Input
+                                placeholder="10.48550/arXiv.2407.08608"
+                                value={doi}
+                                onChange={(e) => setDoi(e.target.value)}
+                                className="text-xs sm:text-sm font-mono"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                                Paper / Preprint Link (Optional)
+                            </label>
+                            <Input
+                                placeholder="https://arxiv.org/abs/..."
+                                value={paperLink}
+                                onChange={(e) => setPaperLink(e.target.value)}
+                                className="text-xs sm:text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Submit Bar */}
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                        <span className="text-[11px] text-gray-400">
+                            Draft automatically backed up locally.
+                        </span>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => navigate('/feed')}
+                                className="text-xs h-9"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={handleSubmit}
+                                disabled={submitting}
+                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-9 px-6 font-medium shadow-xs"
+                            >
+                                {submitting ? "Publishing..." : "Publish Discussion"}
+                            </Button>
+                        </div>
                     </div>
                 </div>
-
-                {/* Live Preview */}
-                {(title || content) && (
-                    <div className="mt-4 bg-white rounded-lg border border-gray-200 p-4">
-                        <p className="text-xs font-medium text-gray-500 mb-3">Preview</p>
-                        <div className="space-y-2">
-                            <h3 className="text-base font-bold text-gray-900">{title || "Untitled"}</h3>
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{content || "No content yet..."}</p>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
