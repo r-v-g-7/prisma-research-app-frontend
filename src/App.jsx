@@ -15,6 +15,8 @@ import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import SavedResearch from "./pages/SavedResearch";
 import SearchResults from "./pages/SearchResults";
+import Discovery from "./pages/Discovery";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
@@ -41,6 +43,8 @@ function App() {
             <Route path='/profile' element={<Profile />} />
             <Route path='/profile/:userId' element={<PublicProfile />} />
             <Route path="/search" element={<SearchResults />} />
+            <Route path="/discovery" element={<Discovery />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
 
         </Routes>

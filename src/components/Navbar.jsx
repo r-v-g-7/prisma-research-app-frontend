@@ -16,7 +16,8 @@ import {
   X,
   Search,
   CheckCircle2,
-  Building2
+  Building2,
+  Settings
 } from "lucide-react";
 
 const Navbar = () => {
@@ -82,6 +83,17 @@ const Navbar = () => {
                                 >
                                     <Layers className="w-3.5 h-3.5 text-purple-400" />
                                     <span>Research Labs</span>
+                                </Link>
+                                <Link
+                                    to="/discovery"
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 ${
+                                        isActive('/discovery')
+                                            ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                                            : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                                    }`}
+                                >
+                                    <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+                                    <span>Discovery</span>
                                 </Link>
                                 <Link
                                     to="/saved"
@@ -174,6 +186,14 @@ const Navbar = () => {
                                                 <Layers className="w-3.5 h-3.5 text-slate-400" />
                                                 <span>My Research Labs</span>
                                             </Link>
+                                            <Link
+                                                to="/settings"
+                                                onClick={() => setUserDropdownOpen(false)}
+                                                className="flex items-center gap-2 px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white"
+                                            >
+                                                <Settings className="w-3.5 h-3.5 text-slate-400" />
+                                                <span>Integrations & Storage</span>
+                                            </Link>
                                         </div>
                                         <div className="py-1">
                                             <button
@@ -235,12 +255,28 @@ const Navbar = () => {
                             <span>Research Workspaces</span>
                         </Link>
                         <Link
+                            to="/discovery"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-200 hover:bg-slate-800"
+                        >
+                            <BookOpen className="w-4 h-4 text-cyan-400" />
+                            <span>Literature Discovery</span>
+                        </Link>
+                        <Link
                             to="/saved"
                             onClick={() => setMobileMenuOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-200 hover:bg-slate-800"
                         >
                             <Bookmark className="w-4 h-4 text-emerald-400" />
                             <span>Saved Library</span>
+                        </Link>
+                        <Link
+                            to="/settings"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-200 hover:bg-slate-800"
+                        >
+                            <Settings className="w-4 h-4 text-slate-400" />
+                            <span>Integrations & Storage</span>
                         </Link>
                         <Link
                             to="/create-post"

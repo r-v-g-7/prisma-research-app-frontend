@@ -44,8 +44,16 @@ import {
     Send,
     UserPlus,
     FlaskConical,
-    LogOut
+    LogOut,
+    Video,
+    HardDrive,
+    Download,
+    Library
 } from "lucide-react";
+import WorkspaceMeetings from "@/components/workspace/WorkspaceMeetings";
+import WorkspaceFiles from "@/components/workspace/WorkspaceFiles";
+import ZoteroImportModal from "@/components/workspace/ZoteroImportModal";
+import { exportWorkspaceBibliography } from "@/services/discovery";
 
 const STATUS_CONFIG = {
     hypothesis: {
@@ -107,12 +115,26 @@ const WorkspaceDetail = () => {
 
     // Reference State
     const [showRefForm, setShowRefForm] = useState(false);
+    const [showZoteroModal, setShowZoteroModal] = useState(false);
     const [refTitle, setRefTitle] = useState("");
     const [refAuthors, setRefAuthors] = useState("");
     const [refUrl, setRefUrl] = useState("");
     const [refDoi, setRefDoi] = useState("");
     const [refNotes, setRefNotes] = useState("");
     const [refSubmitting, setRefSubmitting] = useState(false);
+    const [exportingBib, setExportingBib] = useState(false);
+
+    const handleExportBibliography = async (format = "bibtex") => {
+        if (!workspace?._id) return;
+        setExportingBib(true);
+        try {
+            await exportWorkspaceBibliography(workspace._id, format, `${workspace.title.replace(/[^a-zA-Z0-9]/g, "_")}_references`);
+        } catch (err) {
+            alert(err.message || "Failed to export bibliography");
+        } finally {
+            setExportingBib(false);
+        }
+    };
 
     // Invite State
     const [inviteEmail, setInviteEmail] = useState("");
@@ -492,6 +514,8 @@ const WorkspaceDetail = () => {
                     { id: "brief", label: "Research Brief", icon: FileText, count: null },
                     { id: "evidence", label: "Evidence Board", icon: FlaskConical, count: workspace.evidence?.length || 0 },
                     { id: "decisions", label: "Decision Log", icon: Scale, count: workspace.decisions?.length || 0 },
+                    { id: "meetings", label: "Google Meet", icon: Video, count: null },
+                    { id: "files", label: "Files & Drive", icon: HardDrive, count: null },
                     { id: "references", label: "Literature References", icon: BookOpen, count: workspace.references?.length || 0 },
                     { id: "notes", label: "Scientific Notes", icon: StickyNote, count: workspace.notes?.length || 0 },
                     { id: "tasks", label: "Milestones", icon: ListTodo, count: workspace.tasks?.length || 0 },
@@ -879,25 +903,91 @@ const WorkspaceDetail = () => {
                     </div>
                 )}
 
+                {/* TAB: GOOGLE MEET RESEARCH ROOMS */}
+                {activeTab === "meetings" && (
+                    <WorkspaceMeetings
+                        workspaceId={workspace._id}
+                        isMember={isMember}
+                        workspaceBrief={workspace.brief}
+                    />
+                )}
+
+                {/* TAB: HYBRID RESEARCH STORAGE & GOOGLE DRIVE */}
+                {activeTab === "files" && (
+                    <WorkspaceFiles
+                        workspaceId={workspace._id}
+                        isMember={isMember}
+                    />
+                )}
+
                 {/* TAB 4: LITERATURE REFERENCES */}
                 {activeTab === "references" && (
                     <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
                             <div>
-                                <h2 className="text-base sm:text-lg font-bold text-white">Literature & Bibliography</h2>
+                                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                                    <BookOpen className="w-5 h-5 text-indigo-400" />
+                                    <span>Literature & Bibliography</span>
+                                </h2>
                                 <p className="text-xs text-slate-400 mt-0.5">
-                                    Connected academic publications, DOIs, and theoretical foundations.
+                                    Connected academic publications, DOIs, OpenAlex papers, and synced Zotero references.
                                 </p>
                             </div>
-                            {isMember && (
-                                <Button
-                                    onClick={() => setShowRefForm(!showRefForm)}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8 flex items-center gap-1.5"
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <Link
+                                    to={`/discovery?workspaceId=${workspace._id}`}
+                                    className="bg-slate-900 border border-slate-800 hover:bg-slate-800 text-indigo-300 text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 transition"
                                 >
-                                    <Plus className="w-3.5 h-3.5" />
-                                    <span>{showRefForm ? "Cancel" : "Add Reference"}</span>
-                                </Button>
-                            )}
+                                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                                    <span>Search OpenAlex</span>
+                                </Link>
+                                {isMember && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setShowZoteroModal(true)}
+                                        className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-rose-300 text-xs h-8 px-3 flex items-center gap-1.5"
+                                    >
+                                        <Library className="w-3.5 h-3.5 text-rose-400" />
+                                        <span>Sync Zotero</span>
+                                    </Button>
+                                )}
+                                {(workspace.references && workspace.references.length > 0) && (
+                                    <>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => handleExportBibliography("bibtex")}
+                                            disabled={exportingBib}
+                                            className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-slate-300 text-xs h-8 px-2.5 flex items-center gap-1"
+                                            title="Export BibTeX (.bib) file"
+                                        >
+                                            <Download className="w-3 h-3 text-indigo-400" />
+                                            <span>.bib</span>
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => handleExportBibliography("ris")}
+                                            disabled={exportingBib}
+                                            className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-slate-300 text-xs h-8 px-2.5 flex items-center gap-1"
+                                            title="Export RIS (.ris) file"
+                                        >
+                                            <Download className="w-3 h-3 text-purple-400" />
+                                            <span>.ris</span>
+                                        </Button>
+                                    </>
+                                )}
+                                {isMember && (
+                                    <Button
+                                        onClick={() => setShowRefForm(!showRefForm)}
+                                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8 flex items-center gap-1.5"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        <span>{showRefForm ? "Cancel" : "Add Reference"}</span>
+                                    </Button>
+                                )}
+                            </div>
                         </div>
 
                         {showRefForm && isMember && (
@@ -1191,6 +1281,14 @@ const WorkspaceDetail = () => {
                     </div>
                 )}
             </div>
+
+            {/* Zotero Reference Sync Modal */}
+            <ZoteroImportModal
+                workspaceId={workspace._id}
+                isOpen={showZoteroModal}
+                onClose={() => setShowZoteroModal(false)}
+                onImportSuccess={() => loadWorkspace()}
+            />
         </div>
     );
 };
