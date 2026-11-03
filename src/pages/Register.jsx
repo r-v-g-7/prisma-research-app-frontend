@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,32 +11,46 @@ import {
 import { registerUser } from '@/services/auth';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
+import { 
+  Sparkles, 
+  ArrowRight, 
+  ShieldCheck, 
+  AlertCircle, 
+  User, 
+  Mail, 
+  Lock, 
+  Building2, 
+  GraduationCap, 
+  BookOpen 
+} from 'lucide-react';
 
 const Register = () => {
-  const nameRef = useRef(null);
-  const emailRef = useRef(null);
-  const passwordRef = useRef(null);
-  const fieldOfStudyRef = useRef(null);
-  const institutionRef = useRef(null);
-  const [role, setRole] = useState("student");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "student",
+    institution: "",
+    fieldOfStudy: ""
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const { login, user } = useContext(AuthContext);
 
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     setError("");
 
-    const name = nameRef.current?.value?.trim();
-    const email = emailRef.current?.value?.trim();
-    const password = passwordRef.current?.value;
-    const institution = institutionRef.current?.value?.trim();
-    const fieldOfStudy = fieldOfStudyRef.current?.value?.trim();
+    const { name, email, password, role, institution, fieldOfStudy } = formData;
 
-    if (!name || !email || !password || !role || !institution || !fieldOfStudy) {
-      setError("Please fill in all required fields.");
+    if (!name.trim() || !email.trim() || !password || !institution.trim() || !fieldOfStudy.trim()) {
+      setError("Please complete all academic profile fields.");
       return;
     }
 
@@ -47,14 +61,23 @@ const Register = () => {
 
     try {
       setLoading(true);
-      const response = await registerUser({ name, email, password, role, institution, fieldOfStudy });
+      const response = await registerUser({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        role,
+        institution: institution.trim(),
+        fieldOfStudy: fieldOfStudy.trim()
+      });
+
       if (response?.data?.user && response?.data?.token) {
         login(response.data);
+        navigate("/feed");
       } else {
         navigate("/login");
       }
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.message || "Registration failed. Please check your details.");
     } finally {
       setLoading(false);
     }
@@ -65,78 +88,203 @@ const Register = () => {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl mb-3 shadow-lg">
-            <span className="text-white font-bold text-2xl">P</span>
+    <div className="min-h-screen flex bg-slate-950 text-slate-100">
+      {/* LEFT: Academic Network Context */}
+      <div className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/70 border-r border-slate-800/80 relative overflow-hidden">
+        <div className="absolute top-0 -left-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-lg shadow-indigo-500/25">
+              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-indigo-400" />
+              </div>
+            </div>
+            <div>
+              <span className="text-xl font-bold tracking-tight text-white font-mono">PRISM</span>
+              <span className="block text-[11px] text-indigo-400 font-medium tracking-wider uppercase">Academic Registry</span>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Prism</h1>
-          <p className="text-sm text-gray-600 mt-1">Join the research community</p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Create account</h2>
+        <div className="relative z-10 space-y-6 my-auto max-w-md">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium">
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Open Researcher Identity</span>
+          </div>
+
+          <h2 className="text-3xl font-extrabold text-white tracking-tight leading-snug">
+            Join 12,000+ researchers discovering ideas and building research teams.
+          </h2>
+
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Your Prism profile connects directly to research feeds, collaborative workspaces, peer discussions, and replication boards.
+          </p>
+
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono text-xs">01</div>
+              <p className="text-xs text-slate-300"><strong className="text-white">Publish Questions:</strong> Start discussions with DOIs, equations, and code.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-mono text-xs">02</div>
+              <p className="text-xs text-slate-300"><strong className="text-white">Launch Workspaces:</strong> Transition discussions into private collaborative research teams.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-mono text-xs">03</div>
+              <p className="text-xs text-slate-300"><strong className="text-white">Evidence & Notes:</strong> Track hypotheses, citations, and milestone execution.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 text-xs text-slate-500">
+          <span>Prism Research Systems · Secure Academic Data Protection</span>
+        </div>
+      </div>
+
+      {/* RIGHT: Registration Form */}
+      <div className="w-full lg:w-7/12 flex items-center justify-center p-6 sm:p-10 bg-slate-900/90 relative overflow-y-auto">
+        <div className="w-full max-w-lg space-y-5 my-auto py-8">
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">Create your Researcher Profile</h2>
+            <p className="text-xs text-slate-400 mt-1">
+              Enter your academic affiliation and research focus to get started.
+            </p>
+          </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
-              {error}
+            <div className="p-3.5 rounded-lg bg-red-950/60 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Full Name</label>
-              <Input placeholder="Dr. Jane Doe / Alex Smith" ref={nameRef} className="text-sm" />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Full Name & Title
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    placeholder="e.g. Dr. Jane Doe"
+                    className="pl-9 bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 text-sm h-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Academic Email
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    placeholder="researcher@university.edu"
+                    className="pl-9 bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 text-sm h-10"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Email</label>
-              <Input type="email" placeholder="your@institution.edu" ref={emailRef} className="text-sm" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Academic Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  <Input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    placeholder="••••••••••••"
+                    className="pl-9 bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 text-sm h-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Primary Role
+                </label>
+                <Select value={formData.role} onValueChange={(val) => handleChange("role", val)}>
+                  <SelectTrigger className="w-full bg-slate-950 border-slate-800 text-slate-100 text-sm h-10">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
+                    <SelectItem value="student">Student / Graduate Scholar</SelectItem>
+                    <SelectItem value="professor">Professor / Principal Investigator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Password</label>
-              <Input type="password" placeholder="••••••••" ref={passwordRef} className="text-sm" />
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Institution / University
+                </label>
+                <div className="relative">
+                  <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  <Input
+                    value={formData.institution}
+                    onChange={(e) => handleChange("institution", e.target.value)}
+                    placeholder="e.g. IIT Delhi / Oxford"
+                    className="pl-9 bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 text-sm h-10"
+                    required
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Academic Role</label>
-              <Select value={role} onValueChange={(val) => setRole(val)}>
-                <SelectTrigger className="w-full text-sm">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student / Researcher</SelectItem>
-                  <SelectItem value="professor">Professor / Principal Investigator</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Institution / University</label>
-              <Input placeholder="e.g. IIT Bombay / Stanford University" ref={institutionRef} className="text-sm" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Field of Study</label>
-              <Input placeholder="e.g. Computer Science, Quantum Physics" ref={fieldOfStudyRef} className="text-sm" />
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Field of Study / Discipline
+                </label>
+                <div className="relative">
+                  <BookOpen className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                  <Input
+                    value={formData.fieldOfStudy}
+                    onChange={(e) => handleChange("fieldOfStudy", e.target.value)}
+                    placeholder="e.g. Quantum Computing"
+                    className="pl-9 bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 text-sm h-10"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
             <Button
-              onClick={handleSubmit}
+              type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 text-sm mt-2"
+              className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 mt-2"
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Creating Researcher Account...</span>
+                </>
+              ) : (
+                <>
+                  <span>Complete Academic Registration</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </Button>
-          </div>
+          </form>
 
-          <p className="text-center text-xs text-gray-600 mt-6">
-            Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
+          <p className="text-center text-xs text-slate-400 pt-2">
+            Already have a Prism researcher account?{' '}
+            <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold transition">
               Sign in
             </Link>
           </p>

@@ -4,16 +4,32 @@ import { Button } from "@/components/ui/button";
 import PostCard from "@/components/PostCard";
 import { fetchPosts } from "@/services/post";
 import { useNavigate, Link } from "react-router-dom";
+import { 
+  Compass, 
+  FlaskConical, 
+  HelpCircle, 
+  Users, 
+  GraduationCap, 
+  Sparkles, 
+  Filter, 
+  TrendingUp, 
+  Clock, 
+  PlusCircle, 
+  Search, 
+  ShieldCheck, 
+  ArrowRight,
+  BookOpen
+} from "lucide-react";
 
 const TOPICS = ["All", "EdgeAI", "Transformers", "Quantum", "Distributed Systems", "BioTech", "Robotics", "Algorithms"];
 
 const TYPES = [
-    { id: "all", label: "All Insights" },
-    { id: "research", label: "🔬 Research" },
-    { id: "question", label: "💡 Questions" },
-    { id: "collaboration", label: "🤝 Collaborations" },
-    { id: "study", label: "🎓 Studies" },
-    { id: "showcase", label: "🚀 Showcases" }
+    { id: "all", label: "All Insights", icon: Compass },
+    { id: "research", label: "Peer Research", icon: FlaskConical },
+    { id: "question", label: "Open Questions", icon: HelpCircle },
+    { id: "collaboration", label: "Collaborations", icon: Users },
+    { id: "study", label: "Replication Studies", icon: GraduationCap },
+    { id: "showcase", label: "Showcases", icon: Sparkles }
 ];
 
 const Feed = () => {
@@ -22,7 +38,7 @@ const Feed = () => {
     const [loading, setLoading] = useState(true);
     const [selectedType, setSelectedType] = useState("all");
     const [selectedTopic, setSelectedTopic] = useState("All");
-    const [sortBy, setSortBy] = useState("latest"); // latest, top
+    const [sortBy, setSortBy] = useState("latest");
     const navigate = useNavigate();
 
     const loadPosts = async () => {
@@ -46,140 +62,171 @@ const Feed = () => {
         loadPosts();
     }, [selectedType, selectedTopic, sortBy]);
 
-    const isProfileIncomplete = user && (!user.bio || (!user.skills && !user.interests));
+    const isProfileIncomplete = user && (!user.bio || (!user.skills?.length && !user.interests?.length));
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-16">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
-                {/* Onboarding / Profile Completeness Banner */}
-                {isProfileIncomplete && (
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                        <div className="flex items-start gap-3">
-                            <span className="text-xl">🎓</span>
-                            <div>
-                                <h3 className="text-xs sm:text-sm font-bold text-blue-900">
-                                    Complete your Research Identity
-                                </h3>
-                                <p className="text-[11px] sm:text-xs text-blue-700 mt-0.5">
-                                    Add your research bio, methodologies, and target collaboration topics so other academics can discover your work.
-                                </p>
-                            </div>
+        <div className="space-y-6 pb-16">
+            {/* Quick Proposal Box / Composer Trigger */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shrink-0">
+                        <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-xs font-bold text-white uppercase font-mono">
+                            {user?.name?.charAt(0) || "U"}
                         </div>
-                        <Link to="/profile" className="self-start sm:self-center">
-                            <Button className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-4 font-medium whitespace-nowrap">
-                                Complete Profile →
+                    </div>
+                    <button
+                        onClick={() => navigate('/create-post')}
+                        className="flex-1 text-left px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs sm:text-sm text-slate-400 hover:text-slate-200 hover:border-slate-700 transition"
+                    >
+                        Publish a research question, hypothesis, or methodology inquiry...
+                    </button>
+                    <Link to="/create-post" className="hidden sm:block">
+                        <Button className="h-10 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 rounded-xl font-medium shadow-md shadow-indigo-600/20 border border-indigo-500/30 flex items-center gap-2">
+                            <PlusCircle className="w-4 h-4" />
+                            <span>Publish</span>
+                        </Button>
+                    </Link>
+                </div>
+            </div>
+
+            {/* Profile Completion Callout */}
+            {isProfileIncomplete && (
+                <div className="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-purple-950/60 border border-indigo-800/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                        <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                            <ShieldCheck className="w-5 h-5 text-indigo-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                                Complete your Verified Academic Identity
+                            </h3>
+                            <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+                                Add your research methodologies, lab affiliations, and target publications so other scholars can invite you to collaborative research workspaces.
+                            </p>
+                        </div>
+                    </div>
+                    <Link to="/profile" className="self-start sm:self-center shrink-0">
+                        <button className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
+                            <span>Complete Profile</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                    </Link>
+                </div>
+            )}
+
+            {/* Feed Controls Header: Categories & Sorting */}
+            <div className="space-y-4">
+                {/* Type Filter Pills (ZERO EMOJIS) */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                    {TYPES.map((type) => {
+                        const Icon = type.icon;
+                        const isSelected = selectedType === type.id;
+                        return (
+                            <button
+                                key={type.id}
+                                onClick={() => setSelectedType(type.id)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-2 shrink-0 border ${
+                                    isSelected
+                                        ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 shadow-sm font-semibold'
+                                        : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/60'
+                                }`}
+                            >
+                                <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-indigo-400' : 'text-slate-500'}`} />
+                                <span>{type.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Sub-bar: Topics & Sort Toggle */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                    {/* Topic Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mr-1 shrink-0">
+                            Discipline:
+                        </span>
+                        {TOPICS.map((topic) => (
+                            <button
+                                key={topic}
+                                onClick={() => setSelectedTopic(topic)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-mono transition shrink-0 border ${
+                                    selectedTopic === topic
+                                        ? 'bg-slate-800 text-white border-slate-700 font-semibold'
+                                        : 'bg-slate-950/40 border-slate-800/60 text-slate-400 hover:text-slate-200'
+                                }`}
+                            >
+                                {topic === "All" ? "All Topics" : `#${topic}`}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Sort by */}
+                    <div className="flex items-center gap-1.5 shrink-0 bg-slate-900/80 border border-slate-800 p-1 rounded-xl self-start sm:self-auto">
+                        <button
+                            onClick={() => setSortBy("latest")}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5 ${
+                                sortBy === "latest"
+                                    ? 'bg-slate-800 text-white shadow-xs'
+                                    : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            <span>Recent</span>
+                        </button>
+                        <button
+                            onClick={() => setSortBy("top")}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5 ${
+                                sortBy === "top"
+                                    ? 'bg-slate-800 text-white shadow-xs'
+                                    : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            <TrendingUp className="w-3 h-3 text-slate-400" />
+                            <span>Top Debates</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Posts Stream */}
+            <div className="space-y-4">
+                {loading ? (
+                    <div className="space-y-4">
+                        {[1, 2, 3].map((n) => (
+                            <div key={n} className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 animate-pulse space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-slate-800 rounded-xl" />
+                                    <div className="space-y-2 flex-1">
+                                        <div className="h-3 w-1/4 bg-slate-800 rounded" />
+                                        <div className="h-2 w-1/3 bg-slate-850 rounded" />
+                                    </div>
+                                </div>
+                                <div className="h-4 w-3/4 bg-slate-800 rounded" />
+                                <div className="h-3 w-full bg-slate-800/50 rounded" />
+                            </div>
+                        ))}
+                    </div>
+                ) : posts.length === 0 ? (
+                    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center space-y-4">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
+                            <BookOpen className="w-6 h-6" />
+                        </div>
+                        <div className="max-w-sm mx-auto">
+                            <h3 className="text-base font-bold text-white">No research posts found</h3>
+                            <p className="text-xs text-slate-400 mt-1">
+                                No discussions match this combination of discipline and category. Start the first debate!
+                            </p>
+                        </div>
+                        <Link to="/create-post">
+                            <Button className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 h-9 rounded-xl font-medium shadow-md shadow-indigo-600/20">
+                                Start Research Discussion
                             </Button>
                         </Link>
                     </div>
-                )}
-
-                {/* Feed Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Academic Knowledge Feed</h1>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                            Discover research problems, discuss methodology, and find collaborative teams.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {/* Sort Toggle */}
-                        <div className="flex bg-white rounded-lg border border-gray-200 p-0.5 text-xs">
-                            <button
-                                onClick={() => setSortBy("latest")}
-                                className={`px-2.5 py-1 rounded-md font-medium transition ${
-                                    sortBy === "latest" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-900"
-                                }`}
-                            >
-                                Latest
-                            </button>
-                            <button
-                                onClick={() => setSortBy("top")}
-                                className={`px-2.5 py-1 rounded-md font-medium transition ${
-                                    sortBy === "top" ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-900"
-                                }`}
-                            >
-                                Top Rated
-                            </button>
-                        </div>
-
-                        <Button
-                            onClick={() => navigate('/create-post')}
-                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-3.5 font-medium shadow-xs"
-                        >
-                            + Post Discussion
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Content Type Filter Tabs */}
-                <div className="flex border-b border-gray-200 mb-4 overflow-x-auto no-scrollbar gap-1">
-                    {TYPES.map(type => (
-                        <button
-                            key={type.id}
-                            onClick={() => setSelectedType(type.id)}
-                            className={`px-3 py-2 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition -mb-px ${
-                                selectedType === type.id
-                                    ? "border-blue-600 text-blue-600 font-semibold"
-                                    : "border-transparent text-gray-500 hover:text-gray-900"
-                            }`}
-                        >
-                            {type.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Topic Tags Filter Bar */}
-                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-3 mb-5">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mr-1 flex-shrink-0">
-                        Topics:
-                    </span>
-                    {TOPICS.map(topic => (
-                        <button
-                            key={topic}
-                            onClick={() => setSelectedTopic(topic)}
-                            className={`px-2.5 py-1 rounded-full text-xs font-medium border flex-shrink-0 transition ${
-                                selectedTopic === topic
-                                    ? "bg-gray-900 text-white border-gray-900"
-                                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                            }`}
-                        >
-                            {topic === "All" ? "All Topics" : `#${topic}`}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Feed Body */}
-                {loading ? (
-                    <div className="flex items-center justify-center py-24">
-                        <div className="text-center">
-                            <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                            <p className="text-xs font-medium text-gray-500">Loading academic discussions...</p>
-                        </div>
-                    </div>
-                ) : posts.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200 p-8">
-                        <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
-                            💡
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 mb-1">No research discussions found</h3>
-                        <p className="text-xs text-gray-500 max-w-sm mx-auto mb-5">
-                            {selectedTopic !== "All" || selectedType !== "all"
-                                ? "No posts match the selected filters. Try broadening your criteria or publish the first insight."
-                                : "Be the first researcher to propose a hypothesis or publish an academic discussion."}
-                        </p>
-                        <Button
-                            onClick={() => navigate('/create-post')}
-                            className="bg-blue-600 text-white hover:bg-blue-700 px-5 py-2 text-xs"
-                        >
-                            Post Research Idea
-                        </Button>
-                    </div>
                 ) : (
-                    <div className="space-y-4">
-                        {posts.map(post => (
-                            <PostCard key={post._id} post={post} />
-                        ))}
-                    </div>
+                    posts.map((post) => (
+                        <PostCard key={post._id} post={post} />
+                    ))
                 )}
             </div>
         </div>

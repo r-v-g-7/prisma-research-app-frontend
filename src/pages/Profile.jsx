@@ -4,6 +4,23 @@ import { Input } from "@/components/ui/input";
 import { AuthContext } from "@/context/AuthContext";
 import { updateProfile, fetchProfile } from "@/services/profile";
 import { Link } from "react-router-dom";
+import { 
+  GraduationCap, 
+  Building2, 
+  BookOpen, 
+  ShieldCheck, 
+  Check, 
+  Edit3, 
+  Layers, 
+  Bookmark, 
+  Sparkles, 
+  Atom, 
+  Cpu, 
+  Code2, 
+  ExternalLink,
+  Save,
+  X
+} from "lucide-react";
 
 const Profile = () => {
     const [isEditing, setIsEditing] = useState(false);
@@ -27,7 +44,7 @@ const Profile = () => {
                     localStorage.setItem('user', JSON.stringify({ ...user, ...res.data }));
                 }
             } catch (err) {
-                // fallback to context
+                // fallback
             }
         };
         loadFreshProfile();
@@ -84,214 +101,228 @@ const Profile = () => {
 
     if (!user) {
         return (
-            <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
-                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center">
+                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-xs text-slate-400 font-mono">Loading Academic Identity...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6">
-            <div className="max-w-2xl mx-auto">
-                {showSuccess && (
-                    <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs sm:text-sm flex items-center gap-2">
-                        <span>✓</span> Profile updated successfully!
-                    </div>
-                )}
-                {error && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs sm:text-sm">
-                        {error}
-                    </div>
-                )}
+        <div className="space-y-6 pb-20 max-w-4xl mx-auto">
+            {showSuccess && (
+                <div className="p-3.5 bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>Academic profile and research methodologies updated successfully!</span>
+                </div>
+            )}
+            {error && (
+                <div className="p-3.5 bg-red-950/60 border border-red-500/30 text-red-300 rounded-xl text-xs">
+                    {error}
+                </div>
+            )}
 
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-                    {/* Header banner */}
-                    <div className="h-28 bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-700 p-6 flex items-end">
+            {/* Academic Identity Card */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                {/* Banner */}
+                <div className="h-32 bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border-b border-slate-800 p-6 relative">
+                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-[10px] font-mono uppercase tracking-wider">
+                            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+                            Verified Scholar
+                        </span>
                     </div>
+                </div>
 
-                    <div className="px-6 pb-6 pt-0 relative">
-                        <div className="flex justify-between items-end -mt-12 mb-5">
-                            <div className="w-24 h-24 bg-white rounded-full p-1.5 shadow-md">
-                                <div className="w-full h-full bg-gradient-to-br from-purple-600 to-indigo-800 text-white rounded-full flex items-center justify-center text-3xl font-bold">
-                                    {user.name?.charAt(0)?.toUpperCase()}
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <Link to={`/profile/${user._id}`}>
-                                    <Button variant="outline" className="text-xs h-8">
-                                        View Public Page
-                                    </Button>
-                                </Link>
-                                <Button
-                                    onClick={() => setIsEditing(!isEditing)}
-                                    className={isEditing ? "bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs h-8" : "bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"}
-                                >
-                                    {isEditing ? "Cancel" : "Edit Profile"}
-                                </Button>
+                <div className="px-6 pb-6 pt-0 relative">
+                    {/* Avatar & Edit Bar */}
+                    <div className="flex justify-between items-end -mt-12 mb-6">
+                        <div className="w-24 h-24 bg-slate-950 rounded-2xl p-1 shadow-xl border border-slate-800">
+                            <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-3xl font-bold text-white font-mono uppercase">
+                                {user.name?.charAt(0) || "U"}
                             </div>
                         </div>
 
-                        {!isEditing ? (
-                            <div className="space-y-5">
+                        <div className="flex items-center gap-2">
+                            <Link to={`/profile/${user._id}`}>
+                                <Button variant="outline" className="bg-slate-950 border-slate-800 text-slate-300 hover:text-white text-xs h-9">
+                                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                                    <span>Public Profile</span>
+                                </Button>
+                            </Link>
+                            <Button
+                                onClick={() => setIsEditing(!isEditing)}
+                                className={isEditing 
+                                    ? "bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs h-9" 
+                                    : "bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9"}
+                            >
+                                {isEditing ? (
+                                    <>
+                                        <X className="w-3.5 h-3.5 mr-1" />
+                                        <span>Cancel</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Edit3 className="w-3.5 h-3.5 mr-1" />
+                                        <span>Edit Profile</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {!isEditing ? (
+                        <div className="space-y-6">
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h1 className="text-2xl font-bold text-white tracking-tight">{user.name}</h1>
+                                    <span className="px-2 py-0.5 rounded text-[11px] font-mono uppercase text-indigo-400 bg-indigo-500/10 border border-indigo-500/20">
+                                        {user.role}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-slate-400 mt-1 flex-wrap">
+                                    {user.institution && (
+                                        <span className="flex items-center gap-1">
+                                            <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                                            {user.institution}
+                                        </span>
+                                    )}
+                                    <span className="text-slate-600">·</span>
+                                    <span className="font-mono text-slate-400">{user.email}</span>
+                                </div>
+                            </div>
+
+                            {user.fieldOfStudy && (
                                 <div>
-                                    <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
-                                    <p className="text-xs text-gray-500 capitalize mt-0.5">
-                                        {user.role} {user.institution && `• ${user.institution}`}
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-950/60 text-indigo-300 text-xs font-mono rounded-lg border border-indigo-500/30">
+                                        <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+                                        <span>{user.fieldOfStudy}</span>
+                                    </span>
+                                </div>
+                            )}
+
+                            <div>
+                                <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">
+                                    Research Agenda & Bio
+                                </h3>
+                                <div className="bg-slate-950 rounded-xl p-4 border border-slate-800">
+                                    <p className="text-xs sm:text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
+                                        {user.bio || "No research biography added yet. Outline your ongoing inquiries, lab goals, and collaboration areas."}
                                     </p>
                                 </div>
+                            </div>
 
-                                {user.fieldOfStudy && (
-                                    <div>
-                                        <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full border border-emerald-200">
-                                            🔬 {user.fieldOfStudy}
-                                        </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {user.skills && user.skills.length > 0 && (
+                                    <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 space-y-2">
+                                        <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                                            Methods & Tooling
+                                        </h3>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {user.skills.map((s, i) => (
+                                                <span key={i} className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-300 rounded border border-slate-800">
+                                                    {s}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
 
-                                <div>
-                                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                                        Research Focus & Bio
-                                    </h3>
-                                    <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        {user.bio || "No bio added yet. Tell other researchers about your ongoing research, thesis questions, and collaboration goals."}
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {user.skills && user.skills.length > 0 && (
-                                        <div>
-                                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                                                Technical Skills & Methods
-                                            </h3>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {user.skills.map((s, i) => (
-                                                    <span key={i} className="text-xs px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-100">
-                                                        {s}
-                                                    </span>
-                                                ))}
-                                            </div>
+                                {user.interests && user.interests.length > 0 && (
+                                    <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 space-y-2">
+                                        <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                                            Target Disciplines
+                                        </h3>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {user.interests.map((it, i) => (
+                                                <span key={i} className="text-xs font-mono px-2 py-0.5 bg-indigo-950/40 text-indigo-300 rounded border border-indigo-500/20">
+                                                    #{it}
+                                                </span>
+                                            ))}
                                         </div>
-                                    )}
-
-                                    {user.interests && user.interests.length > 0 && (
-                                        <div>
-                                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                                                Research Interests
-                                            </h3>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {user.interests.map((it, i) => (
-                                                    <span key={i} className="text-xs px-2.5 py-0.5 bg-purple-50 text-purple-700 rounded-md border border-purple-100">
-                                                        #{it}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                                    <span>Account: {user.email}</span>
-                                    <Link to="/saved" className="text-blue-600 font-semibold hover:underline">
-                                        View Saved Research Library →
-                                    </Link>
-                                </div>
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="space-y-4 mt-2">
+                        </div>
+                    ) : (
+                        <div className="space-y-4 pt-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                                        Full Name
-                                    </label>
+                                    <label className="block text-xs font-mono text-slate-300 uppercase mb-1">Full Name</label>
                                     <Input
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        className="text-xs sm:text-sm"
+                                        className="bg-slate-950 border-slate-800 text-slate-100 text-xs sm:text-sm"
                                     />
                                 </div>
-
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                                        Institution / University
-                                    </label>
+                                    <label className="block text-xs font-mono text-slate-300 uppercase mb-1">Institution</label>
                                     <Input
                                         value={institution}
                                         onChange={(e) => setInstitution(e.target.value)}
-                                        placeholder="e.g. IIT Bombay / MIT"
-                                        className="text-xs sm:text-sm"
+                                        className="bg-slate-950 border-slate-800 text-slate-100 text-xs sm:text-sm"
                                     />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                                        Field of Study
-                                    </label>
-                                    <Input
-                                        value={fieldOfStudy}
-                                        onChange={(e) => setFieldOfStudy(e.target.value)}
-                                        placeholder="e.g. Quantum Information, Molecular Dynamics"
-                                        className="text-xs sm:text-sm"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                                        Research Focus & Bio
-                                    </label>
-                                    <textarea
-                                        rows="4"
-                                        value={bio}
-                                        onChange={(e) => setBio(e.target.value)}
-                                        placeholder="Detail your research inquiries, thesis, methodologies, and team goals..."
-                                        className="w-full p-3 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                                        Technical Skills & Tools (comma separated)
-                                    </label>
-                                    <Input
-                                        value={skillsText}
-                                        onChange={(e) => setSkillsText(e.target.value)}
-                                        placeholder="e.g. PyTorch, LaTeX, Microscopy, C++, CRISPR"
-                                        className="text-xs sm:text-sm"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                                        Research Interests & Keywords (comma separated)
-                                    </label>
-                                    <Input
-                                        value={interestsText}
-                                        onChange={(e) => setInterestsText(e.target.value)}
-                                        placeholder="e.g. EdgeAI, Transformers, Superconductivity"
-                                        className="text-xs sm:text-sm"
-                                    />
-                                </div>
-
-                                <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setIsEditing(false)}
-                                        className="text-xs h-8"
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={handleSubmit}
-                                        disabled={saving}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-4"
-                                    >
-                                        {saving ? "Saving..." : "Save Academic Profile"}
-                                    </Button>
                                 </div>
                             </div>
-                        )}
-                    </div>
+
+                            <div>
+                                <label className="block text-xs font-mono text-slate-300 uppercase mb-1">Field of Study</label>
+                                <Input
+                                    value={fieldOfStudy}
+                                    onChange={(e) => setFieldOfStudy(e.target.value)}
+                                    className="bg-slate-950 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-mono text-slate-300 uppercase mb-1">Research Bio</label>
+                                <textarea
+                                    rows={4}
+                                    value={bio}
+                                    onChange={(e) => setBio(e.target.value)}
+                                    className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 focus:border-indigo-500 outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-mono text-slate-300 uppercase mb-1">Technical Skills & Methods (comma separated)</label>
+                                <Input
+                                    value={skillsText}
+                                    onChange={(e) => setSkillsText(e.target.value)}
+                                    placeholder="PyTorch, Quantization, C++, ROS..."
+                                    className="bg-slate-950 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-mono text-slate-300 uppercase mb-1">Disciplines & Topics (comma separated)</label>
+                                <Input
+                                    value={interestsText}
+                                    onChange={(e) => setInterestsText(e.target.value)}
+                                    placeholder="QuantumAlgorithms, EdgeAI, DistributedSystems..."
+                                    className="bg-slate-950 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsEditing(false)}
+                                    className="bg-slate-950 border-slate-800 text-slate-300 text-xs h-9"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleSubmit}
+                                    disabled={saving}
+                                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 px-4 flex items-center gap-1.5"
+                                >
+                                    <Save className="w-3.5 h-3.5" />
+                                    <span>{saving ? "Updating..." : "Save Academic Profile"}</span>
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

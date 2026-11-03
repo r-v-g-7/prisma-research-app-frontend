@@ -3,14 +3,28 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createPost } from "@/services/post";
 import { useNavigate } from "react-router-dom";
+import { 
+  FlaskConical, 
+  HelpCircle, 
+  Users, 
+  Sparkles, 
+  GraduationCap, 
+  Bell, 
+  ArrowLeft, 
+  Send, 
+  ExternalLink,
+  Tag,
+  CheckCircle2,
+  FileText
+} from "lucide-react";
 
 const POST_TYPES = [
-    { id: "research", label: "🔬 Research Discussion", desc: "Analyze papers, theories, or experimental observations" },
-    { id: "question", label: "💡 Research Question", desc: "Pose an open theoretical or empirical research challenge" },
-    { id: "collaboration", label: "🤝 Collaboration Opportunity", desc: "Seek co-authors, lab partners, or technical advisors" },
-    { id: "showcase", label: "🚀 Project Showcase", desc: "Demonstrate a working prototype, dataset, or preprint" },
-    { id: "study", label: "🎓 Study & Methodology", desc: "Share literature surveys, notes, and reproducible recipes" },
-    { id: "announcement", label: "📢 Academic Announcement", desc: "CFP, workshop dates, or lab openings" }
+    { id: "research", label: "Peer Research Discussion", icon: FlaskConical, desc: "Analyze papers, theories, or experimental observations" },
+    { id: "question", label: "Open Research Question", icon: HelpCircle, desc: "Pose a theoretical, mathematical, or empirical inquiry" },
+    { id: "collaboration", label: "Collaboration Call", icon: Users, desc: "Seek co-authors, laboratory partners, or advisors" },
+    { id: "showcase", label: "Project & Preprint Showcase", icon: Sparkles, desc: "Demonstrate a working prototype, dataset, or preprint" },
+    { id: "study", label: "Replication Study & Methodology", icon: GraduationCap, desc: "Share literature surveys, notes, and reproducible recipes" },
+    { id: "announcement", label: "Academic Announcement", icon: Bell, desc: "Calls for papers, conference dates, or lab openings" }
 ];
 
 const CreatePost = () => {
@@ -28,9 +42,7 @@ const CreatePost = () => {
     const [postType, setPostType] = useState("research");
     const [tags, setTags] = useState("");
     const [doi, setDoi] = useState("");
-    const [paperLink, setPaperLink] = useState("");
     const [errors, setErrors] = useState({});
-    const [showSuccess, setShowSuccess] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
@@ -60,174 +72,180 @@ const CreatePost = () => {
 
         setSubmitting(true);
         setErrorMessage("");
-
         try {
-            const tagsArr = tags
+            const tagArray = tags
                 .split(",")
-                .map(t => t.trim().replace(/^#/, ""))
+                .map(t => t.trim().replace(/^#/, ''))
                 .filter(Boolean);
 
             const postData = {
                 title: title.trim(),
                 content: content.trim(),
                 type: postType,
-                tags: tagsArr,
-                doi: doi.trim() || undefined,
-                paperLink: paperLink.trim() || undefined
+                tags: tagArray,
+                doi: doi.trim() || undefined
             };
 
-            const res = await createPost(postData);
-            setShowSuccess(true);
+            const response = await createPost(postData);
             localStorage.removeItem('post-draft');
-
-            setTimeout(() => {
-                navigate(`/post/${res.data._id}`);
-            }, 1000);
+            if (response.data?._id) {
+                navigate(`/post/${response.data._id}`);
+            } else {
+                navigate('/feed');
+            }
         } catch (err) {
-            setErrorMessage(err.message || "Failed to publish post");
+            setErrorMessage(err.message || "Failed to publish research proposal");
         } finally {
             setSubmitting(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6">
-            <div className="max-w-3xl mx-auto">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Publish Academic Inquiry</h1>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                        Share ideas, solicit critiques, or propose questions that can evolve into research workspaces.
+        <div className="space-y-6 pb-20 max-w-3xl mx-auto">
+            {/* Top Navigation */}
+            <div className="flex items-center justify-between">
+                <button
+                    onClick={() => navigate('/feed')}
+                    className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back to Knowledge Feed</span>
+                </button>
+            </div>
+
+            {/* Main Form Card */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Publish Research Proposal</h1>
+                    <p className="text-xs text-slate-400 mt-1">
+                        Formulate your research questions, share preprints, or invite cross-institutional collaborators.
                     </p>
                 </div>
 
                 {errorMessage && (
-                    <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl mb-4">
+                    <div className="p-3.5 bg-red-950/60 border border-red-500/30 text-red-300 text-xs rounded-xl">
                         {errorMessage}
                     </div>
                 )}
-                {showSuccess && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl mb-4">
-                        ✓ Published successfully! Redirecting to discussion...
-                    </div>
-                )}
 
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 sm:p-8 space-y-6">
-                    {/* Content Type Selector */}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Select Contribution Category (ZERO EMOJIS) */}
                     <div>
-                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                            Inquiry Category <span className="text-red-500">*</span>
+                        <label className="block text-xs font-mono text-slate-300 uppercase mb-2">
+                            Select Academic Category
                         </label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {POST_TYPES.map(pt => (
-                                <div
-                                    key={pt.id}
-                                    onClick={() => setPostType(pt.id)}
-                                    className={`p-3 rounded-xl border cursor-pointer transition ${
-                                        postType === pt.id
-                                            ? "border-blue-600 bg-blue-50/40 ring-1 ring-blue-500"
-                                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
-                                    }`}
-                                >
-                                    <p className="text-xs font-bold text-gray-900">{pt.label}</p>
-                                    <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">{pt.desc}</p>
-                                </div>
-                            ))}
+                            {POST_TYPES.map(type => {
+                                const Icon = type.icon;
+                                const isSelected = postType === type.id;
+                                return (
+                                    <button
+                                        key={type.id}
+                                        type="button"
+                                        onClick={() => setPostType(type.id)}
+                                        className={`p-3 rounded-xl border text-left transition flex items-start gap-3 ${
+                                            isSelected
+                                                ? 'bg-indigo-950/70 border-indigo-500/50 shadow-sm'
+                                                : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-950 hover:border-slate-700'
+                                        }`}
+                                    >
+                                        <div className={`p-2 rounded-lg shrink-0 ${
+                                            isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-900 text-slate-400'
+                                        }`}>
+                                            <Icon className="w-4 h-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-white' : 'text-slate-200'}`}>
+                                                {type.label}
+                                            </p>
+                                            <p className="text-[11px] text-slate-400 line-clamp-1 mt-1">
+                                                {type.desc}
+                                            </p>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* Title */}
+                    {/* Proposal Title */}
                     <div>
-                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                            Discussion Title <span className="text-red-500">*</span>
+                        <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
+                            Research Title / Core Inquiry
                         </label>
                         <Input
-                            placeholder="e.g. Can FlashAttention-3 be adapted for non-GPU systolic architectures?"
+                            placeholder="e.g. Can Multi-Paxos match Raft's operational simplicity without tail latency spikes?"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="text-sm"
+                            className="bg-slate-950 border-slate-800 text-slate-100 text-sm h-11 focus:border-indigo-500"
+                            required
                         />
-                        {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+                        {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title}</p>}
                     </div>
 
-                    {/* Content */}
+                    {/* Technical Abstract / Content */}
                     <div>
-                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                            Detailed Background, Hypothesis, or Question <span className="text-red-500">*</span>
+                        <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
+                            Methodology, Evidence & Inquiries
                         </label>
                         <textarea
-                            rows="7"
-                            placeholder="Explain the theoretical context, current bottlenecks, empirical observations, or experimental questions..."
+                            rows={6}
+                            placeholder="Detail your theoretical foundation, observations, mathematical formulation, or specific advice needed from peer researchers..."
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            className="w-full p-4 border border-gray-300 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans leading-relaxed"
+                            className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 focus:border-indigo-500 outline-none leading-relaxed"
+                            required
                         />
-                        {errors.content && <p className="text-xs text-red-500 mt-1">{errors.content}</p>}
+                        {errors.content && <p className="text-xs text-red-400 mt-1">{errors.content}</p>}
                     </div>
 
-                    {/* Tags */}
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                            Keywords & Topics (comma separated)
-                        </label>
-                        <Input
-                            placeholder="Transformers, Hardware, SystolicArrays, PyTorch"
-                            value={tags}
-                            onChange={(e) => setTags(e.target.value)}
-                            className="text-xs sm:text-sm"
-                        />
-                    </div>
-
-                    {/* Academic Reference DOI and Paper Link (Optional) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                    {/* DOI & Topic Tags */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                                Citation DOI (Optional)
+                            <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
+                                Primary Paper DOI / arXiv ID (Optional)
                             </label>
                             <Input
-                                placeholder="10.48550/arXiv.2407.08608"
+                                placeholder="10.1103/PhysRevA.109.022401"
                                 value={doi}
                                 onChange={(e) => setDoi(e.target.value)}
-                                className="text-xs sm:text-sm font-mono"
+                                className="bg-slate-950 border-slate-800 text-slate-100 font-mono text-xs sm:text-sm"
                             />
                         </div>
+
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                                Paper / Preprint Link (Optional)
+                            <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
+                                Discipline Tags (Comma-separated)
                             </label>
                             <Input
-                                placeholder="https://arxiv.org/abs/..."
-                                value={paperLink}
-                                onChange={(e) => setPaperLink(e.target.value)}
-                                className="text-xs sm:text-sm"
+                                placeholder="Quantum, Algorithms, NISQ..."
+                                value={tags}
+                                onChange={(e) => setTags(e.target.value)}
+                                className="bg-slate-950 border-slate-800 text-slate-100 font-mono text-xs sm:text-sm"
                             />
                         </div>
                     </div>
 
                     {/* Submit Bar */}
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                        <span className="text-[11px] text-gray-400">
-                            Draft automatically backed up locally.
-                        </span>
-                        <div className="flex gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => navigate('/feed')}
-                                className="text-xs h-9"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={handleSubmit}
-                                disabled={submitting}
-                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-9 px-6 font-medium shadow-xs"
-                            >
-                                {submitting ? "Publishing..." : "Publish Discussion"}
-                            </Button>
-                        </div>
+                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => navigate('/feed')}
+                            className="bg-slate-950 border-slate-800 text-slate-300 hover:text-white text-xs h-10 px-4"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={submitting}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-10 px-5 font-semibold shadow-md shadow-indigo-600/25 flex items-center gap-2"
+                        >
+                            <Send className="w-4 h-4" />
+                            <span>{submitting ? "Publishing Proposal..." : "Publish to Knowledge Feed"}</span>
+                        </Button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     );

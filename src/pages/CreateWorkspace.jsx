@@ -3,15 +3,26 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { createWorkspace } from '@/services/workspace';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { 
+  Layers, 
+  Lock, 
+  Globe, 
+  Sparkles, 
+  FileText, 
+  ArrowLeft, 
+  ShieldCheck, 
+  Tag, 
+  CheckCircle2 
+} from 'lucide-react';
 
 export const CreateWorkspace = () => {
     const [searchParams] = useSearchParams();
     const postId = searchParams.get("postId") || "";
     const postTitle = searchParams.get("title") || "";
 
-    const [title, setTitle] = useState(postTitle ? `Project: ${postTitle}` : "");
+    const [title, setTitle] = useState(postTitle ? `Lab: ${postTitle}` : "");
     const [description, setDescription] = useState(
-        postTitle ? `Collaborative research project initiated from discussion: "${postTitle}"` : ""
+        postTitle ? `Collaborative research lab initiated from public discussion: "${postTitle}"` : ""
     );
     const [workspaceType, setWorkspaceType] = useState("research");
     const [privacy, setPrivacy] = useState("private");
@@ -26,30 +37,23 @@ export const CreateWorkspace = () => {
     const validateForm = () => {
         const newErrors = {};
         if (!title.trim() || title.trim().length < 5) {
-            newErrors.title = "Title must be at least 5 characters";
+            newErrors.title = "Lab title must be at least 5 characters";
         }
         if (!description.trim() || description.trim().length < 15) {
             newErrors.description = "Description must be at least 15 characters";
         }
-        if (!workspaceType) {
-            newErrors.workspaceType = "Workspace type is required";
-        }
-        if (!privacy) {
-            newErrors.privacy = "Privacy setting is required";
-        }
         return newErrors;
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
         setErrorMessage("");
         const validationError = validateForm();
         setErrors(validationError);
 
-        if (Object.keys(validationError).length > 0) {
-            return;
-        }
+        if (Object.keys(validationError).length > 0) return;
 
-        const tagsArr = tags.trim().split(",").map(e => e.trim()).filter(Boolean);
+        const tagsArr = tags.trim().split(",").map(e => e.trim().replace(/^#/, '')).filter(Boolean);
 
         try {
             setLoading(true);
@@ -63,86 +67,103 @@ export const CreateWorkspace = () => {
             };
 
             const data = await createWorkspace(workspaceData);
-            setLoading(false);
             setShowSuccess(true);
 
             setTimeout(() => {
                 navigate(`/workspace/${data.data._id}`);
-            }, 1000);
+            }, 800);
 
         } catch (err) {
+            setErrorMessage(err.message || "Failed to create research workspace");
+        } finally {
             setLoading(false);
-            setErrorMessage(err.message || "Failed to create workspace");
         }
     };
 
-    const handleCancel = () => {
-        navigate(-1);
-    };
-
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl mx-auto">
-                {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Create Research Workspace</h1>
-                    <p className="text-sm text-gray-500 mt-1">
-                        Set up a collaborative space to conduct research, document notes, and coordinate tasks.
+        <div className="space-y-6 pb-20 max-w-3xl mx-auto">
+            {/* Top Navigation */}
+            <div className="flex items-center justify-between">
+                <button
+                    onClick={() => navigate('/workspaces')}
+                    className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back to Research Labs</span>
+                </button>
+            </div>
+
+            {/* Main Form Card */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Initialize Research Lab</h1>
+                    <p className="text-xs text-slate-400 mt-1">
+                        Spin up a dedicated research workspace equipped with an evidence board, decision log, and literature manager.
                     </p>
-                    {postId && (
-                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-xs text-blue-800">
-                            <span>🔗</span>
-                            <span>Linking to Discussion: <strong>{postTitle}</strong></span>
-                        </div>
-                    )}
                 </div>
 
-                {/* Form Card */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-6">
-                    {errorMessage && (
-                        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
-                            {errorMessage}
+                {/* Origin Post Banner */}
+                {postId && (
+                    <div className="p-4 rounded-xl bg-indigo-950/60 border border-indigo-500/30 flex items-start gap-3">
+                        <FileText className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+                        <div>
+                            <h4 className="text-xs font-bold text-white">Seed Discussion Connected</h4>
+                            <p className="text-xs text-indigo-200 mt-0.5">
+                                This workspace will carry over contextual debate points and references from: <strong>"{postTitle}"</strong>
+                            </p>
                         </div>
-                    )}
-                    {showSuccess && (
-                        <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
-                            ✓ Workspace created successfully! Redirecting...
-                        </div>
-                    )}
+                    </div>
+                )}
 
+                {errorMessage && (
+                    <div className="p-3.5 bg-red-950/60 border border-red-500/30 text-red-300 text-xs rounded-xl">
+                        {errorMessage}
+                    </div>
+                )}
+
+                {showSuccess && (
+                    <div className="p-3.5 bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs rounded-xl flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>Research lab successfully established! Redirecting to command center...</span>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-5">
                     {/* Title */}
                     <div>
-                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                            Workspace Title <span className="text-red-500">*</span>
+                        <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
+                            Research Lab / Project Title
                         </label>
                         <Input
-                            placeholder="e.g. Edge Transformer Architecture Study"
+                            placeholder="e.g. Distributed Consensus Verification Lab"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="text-sm"
+                            className="bg-slate-950 border-slate-800 text-slate-100 text-sm h-11 focus:border-indigo-500"
+                            required
                         />
-                        {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+                        {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title}</p>}
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                            Description & Research Objectives <span className="text-red-500">*</span>
+                        <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
+                            Research Objectives & Hypothesis Scope
                         </label>
                         <textarea
-                            rows="4"
-                            placeholder="Explain the research questions, methodologies, and goals of this project..."
+                            rows={4}
+                            placeholder="Detail the scientific problem, empirical methodology, hardware requirements, and planned deliverables..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                            className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 focus:border-indigo-500 outline-none leading-relaxed"
+                            required
                         />
-                        {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
+                        {errors.description && <p className="text-xs text-red-400 mt-1">{errors.description}</p>}
                     </div>
 
-                    {/* Type and Privacy Row */}
+                    {/* Type and Privacy (ZERO EMOJIS) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                            <label className="block text-xs font-mono text-slate-300 uppercase mb-2">
                                 Workspace Type
                             </label>
                             <div className="flex gap-2">
@@ -151,10 +172,10 @@ export const CreateWorkspace = () => {
                                         type="button"
                                         key={t}
                                         onClick={() => setWorkspaceType(t)}
-                                        className={`flex-1 py-2 text-xs font-medium rounded-lg border capitalize transition ${
+                                        className={`flex-1 py-2 text-xs font-mono capitalize rounded-xl border transition ${
                                             workspaceType === t
-                                                ? "bg-blue-600 text-white border-blue-600"
-                                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                                ? "bg-indigo-600/30 text-indigo-300 border-indigo-500/50 font-bold"
+                                                : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
                                         }`}
                                     >
                                         {t}
@@ -164,31 +185,33 @@ export const CreateWorkspace = () => {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                                Access Privacy
+                            <label className="block text-xs font-mono text-slate-300 uppercase mb-2">
+                                Access Level
                             </label>
                             <div className="flex gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setPrivacy("private")}
-                                    className={`flex-1 py-2 text-xs font-medium rounded-lg border transition ${
+                                    className={`flex-1 py-2 text-xs font-mono rounded-xl border transition flex items-center justify-center gap-1.5 ${
                                         privacy === "private"
-                                            ? "bg-blue-600 text-white border-blue-600"
-                                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                            ? "bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold"
+                                            : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
                                     }`}
                                 >
-                                    🔒 Private (Invite Only)
+                                    <Lock className="w-3.5 h-3.5" />
+                                    <span>Private (Invite-Only)</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setPrivacy("public")}
-                                    className={`flex-1 py-2 text-xs font-medium rounded-lg border transition ${
+                                    className={`flex-1 py-2 text-xs font-mono rounded-xl border transition flex items-center justify-center gap-1.5 ${
                                         privacy === "public"
-                                            ? "bg-blue-600 text-white border-blue-600"
-                                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold"
+                                            : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
                                     }`}
                                 >
-                                    🌐 Public
+                                    <Globe className="w-3.5 h-3.5" />
+                                    <span>Open Academic</span>
                                 </button>
                             </div>
                         </div>
@@ -196,37 +219,37 @@ export const CreateWorkspace = () => {
 
                     {/* Tags */}
                     <div>
-                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                            Tags (comma separated)
+                        <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
+                            Discipline Tags (Comma-separated)
                         </label>
                         <Input
-                            placeholder="AI, Transformers, Edge Computing, PyTorch"
+                            placeholder="AI, Transformers, Quantization, Edge Computing"
                             value={tags}
                             onChange={(e) => setTags(e.target.value)}
-                            className="text-sm"
+                            className="bg-slate-950 border-slate-800 text-slate-100 font-mono text-xs sm:text-sm"
                         />
                     </div>
 
                     {/* Actions */}
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={handleCancel}
-                            className="text-sm"
+                            onClick={() => navigate('/workspaces')}
+                            className="bg-slate-950 border-slate-800 text-slate-300 hover:text-white text-xs h-10 px-4"
                         >
                             Cancel
                         </Button>
                         <Button
-                            type="button"
-                            onClick={handleSubmit}
+                            type="submit"
                             disabled={loading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-6"
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-10 px-5 font-semibold shadow-md shadow-indigo-600/25 flex items-center gap-2"
                         >
-                            {loading ? "Creating..." : "Create Workspace"}
+                            <Layers className="w-4 h-4" />
+                            <span>{loading ? "Initializing..." : "Launch Research Lab"}</span>
                         </Button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     );

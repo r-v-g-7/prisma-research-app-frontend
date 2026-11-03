@@ -5,6 +5,21 @@ import { fetchWorkspaces, inviteMember } from "@/services/workspace";
 import { AuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import PostCard from "@/components/PostCard";
+import { 
+  GraduationCap, 
+  Building2, 
+  BookOpen, 
+  ShieldCheck, 
+  Layers, 
+  MessageSquare, 
+  UserPlus, 
+  ArrowLeft, 
+  Check, 
+  ExternalLink, 
+  Sparkles, 
+  Lock, 
+  Globe 
+} from "lucide-react";
 
 const PublicProfile = () => {
     const { userId } = useParams();
@@ -14,7 +29,7 @@ const PublicProfile = () => {
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [activeTab, setActiveTab] = useState("posts"); // posts, workspaces
+    const [activeTab, setActiveTab] = useState("posts");
 
     // Collaboration Invite Modal State
     const [myWorkspaces, setMyWorkspaces] = useState([]);
@@ -48,7 +63,6 @@ const PublicProfile = () => {
         try {
             const res = await fetchWorkspaces();
             const list = res.data || [];
-            // Filter workspaces where currentUser is creator or member
             setMyWorkspaces(list);
             if (list.length > 0) {
                 setSelectedWorkspace(list[0]._id);
@@ -63,7 +77,7 @@ const PublicProfile = () => {
         setInviteSending(true);
         try {
             await inviteMember(selectedWorkspace, { inviteeId: userId });
-            setInviteFeedback("✓ Invitation sent successfully!");
+            setInviteFeedback("Invitation sent successfully!");
             setTimeout(() => {
                 setShowInviteModal(false);
                 setInviteFeedback("");
@@ -77,102 +91,116 @@ const PublicProfile = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
-                <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                    <p className="text-sm font-medium text-gray-600">Loading researcher profile...</p>
-                </div>
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center">
+                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-xs text-slate-400 font-mono">Loading Scholar Identity...</p>
             </div>
         );
     }
 
     if (error || !profileData) {
         return (
-            <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
-                <div className="text-center max-w-md mx-auto px-4">
-                    <p className="text-lg font-bold text-gray-900 mb-2">Researcher Not Found</p>
-                    <p className="text-sm text-gray-500 mb-6">{error || "This researcher profile is unavailable."}</p>
-                    <Button onClick={() => navigate('/feed')} className="bg-blue-600 hover:bg-blue-700 text-sm">
-                        Back to Feed
-                    </Button>
-                </div>
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center max-w-md mx-auto space-y-4">
+                <h2 className="text-lg font-bold text-white">Researcher Not Found</h2>
+                <p className="text-xs text-slate-400">{error || "Could not retrieve the requested academic profile."}</p>
+                <Button onClick={() => navigate('/feed')} className="bg-indigo-600 text-white text-xs">
+                    Return to Knowledge Feed
+                </Button>
             </div>
         );
     }
 
-    const { profile, posts, workspaces } = profileData;
+    const { user: profile, posts, workspaces } = profileData;
     const isSelf = currentUser?._id === profile._id;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-16">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-                {/* Back button */}
+        <div className="space-y-6 pb-20 max-w-4xl mx-auto">
+            {/* Top Navigation */}
+            <div className="flex items-center justify-between">
                 <button
-                    onClick={() => navigate(-1)}
-                    className="text-xs font-medium text-gray-500 hover:text-gray-900 mb-6 flex items-center gap-1 transition"
+                    onClick={() => navigate('/feed')}
+                    className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition"
                 >
-                    ← Back
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back to Knowledge Feed</span>
                 </button>
+            </div>
 
-                {/* Profile Card Banner */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-                    <div className="h-32 bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-700 p-6 flex items-end">
+            {/* Profile Header Card */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                {/* Banner */}
+                <div className="h-32 bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border-b border-slate-800 p-6 relative">
+                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-[10px] font-mono uppercase tracking-wider">
+                            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+                            Verified Scholar
+                        </span>
                     </div>
+                </div>
 
-                    <div className="px-6 sm:px-8 pb-8 pt-0 relative">
-                        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-14 mb-6">
-                            <div className="w-24 h-24 bg-white rounded-full p-1.5 shadow-md">
-                                <div className="w-full h-full bg-gradient-to-br from-purple-600 to-purple-800 text-white rounded-full flex items-center justify-center text-3xl font-bold">
-                                    {profile.name?.charAt(0)?.toUpperCase()}
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                {isSelf ? (
-                                    <Button
-                                        onClick={() => navigate('/profile')}
-                                        variant="outline"
-                                        className="text-xs sm:text-sm"
-                                    >
-                                        Edit My Profile
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        onClick={handleOpenInviteModal}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-5 shadow-sm"
-                                    >
-                                        🤝 Invite to Research Workspace
-                                    </Button>
-                                )}
+                <div className="px-6 pb-6 pt-0 relative">
+                    {/* Avatar & Action Button */}
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 mb-6">
+                        <div className="w-24 h-24 bg-slate-950 rounded-2xl p-1 shadow-xl border border-slate-800">
+                            <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-3xl font-bold text-white font-mono uppercase">
+                                {profile.name?.charAt(0) || "U"}
                             </div>
                         </div>
 
-                        {/* Name & Academic Meta */}
-                        <div className="space-y-3 mb-6">
-                            <div>
-                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{profile.name}</h1>
-                                <p className="text-sm text-gray-600 mt-1 capitalize flex items-center gap-2 flex-wrap">
-                                    <span className="font-semibold text-gray-900">{profile.role}</span>
-                                    {profile.institution && (
-                                        <>
-                                            <span className="text-gray-400">•</span>
-                                            <span>{profile.institution}</span>
-                                        </>
-                                    )}
-                                </p>
-                            </div>
-
-                            {profile.fieldOfStudy && (
-                                <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full border border-emerald-200">
-                                    🔬 {profile.fieldOfStudy}
-                                </span>
+                        <div className="flex items-center gap-3">
+                            {isSelf ? (
+                                <Button
+                                    onClick={() => navigate('/profile')}
+                                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 px-4"
+                                >
+                                    Edit My Academic Profile
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={handleOpenInviteModal}
+                                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 px-4 flex items-center gap-2 shadow-md shadow-indigo-600/20 border border-indigo-500/30"
+                                >
+                                    <UserPlus className="w-4 h-4" />
+                                    <span>Invite to Research Lab</span>
+                                </Button>
                             )}
                         </div>
+                    </div>
+
+                    {/* Name & Academic Meta */}
+                    <div className="space-y-4 mb-6">
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{profile.name}</h1>
+                                <span className="px-2 py-0.5 rounded text-[11px] font-mono uppercase text-indigo-400 bg-indigo-500/10 border border-indigo-500/20">
+                                    {profile.role}
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
+                                {profile.institution && (
+                                    <span className="flex items-center gap-1 text-slate-300">
+                                        <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                                        {profile.institution}
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+
+                        {profile.fieldOfStudy && (
+                            <div>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-950/60 text-indigo-300 text-xs font-mono rounded-lg border border-indigo-500/30">
+                                    <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+                                    <span>{profile.fieldOfStudy}</span>
+                                </span>
+                            </div>
+                        )}
 
                         {/* Bio */}
-                        <div className="mb-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Research Focus & Bio</h3>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        <div className="bg-slate-950 rounded-xl p-4 border border-slate-800">
+                            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">
+                                Research Agenda & Focus
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
                                 {profile.bio || "No research biography provided yet."}
                             </p>
                         </div>
@@ -180,11 +208,13 @@ const PublicProfile = () => {
                         {/* Skills and Interests */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {profile.skills && profile.skills.length > 0 && (
-                                <div>
-                                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Technical Skills & Methods</h3>
+                                <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 space-y-2">
+                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                                        Methods & Tooling
+                                    </h3>
                                     <div className="flex flex-wrap gap-1.5">
                                         {profile.skills.map((s, i) => (
-                                            <span key={i} className="text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-100">
+                                            <span key={i} className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-300 rounded border border-slate-800">
                                                 {s}
                                             </span>
                                         ))}
@@ -193,11 +223,13 @@ const PublicProfile = () => {
                             )}
 
                             {profile.interests && profile.interests.length > 0 && (
-                                <div>
-                                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Research Interests</h3>
+                                <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 space-y-2">
+                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                                        Target Disciplines
+                                    </h3>
                                     <div className="flex flex-wrap gap-1.5">
                                         {profile.interests.map((it, i) => (
-                                            <span key={i} className="text-xs px-2.5 py-1 bg-purple-50 text-purple-700 rounded-md border border-purple-100">
+                                            <span key={i} className="text-xs font-mono px-2 py-0.5 bg-indigo-950/40 text-indigo-300 rounded border border-indigo-500/20">
                                                 #{it}
                                             </span>
                                         ))}
@@ -208,158 +240,117 @@ const PublicProfile = () => {
                     </div>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex border-b border-gray-200 mb-6 bg-white rounded-t-xl px-4 pt-2 border-x shadow-xs">
+                {/* Profile Tabs */}
+                <div className="flex border-t border-slate-800 bg-slate-950 px-6 gap-2">
                     <button
                         onClick={() => setActiveTab("posts")}
-                        className={`px-4 py-3 text-xs sm:text-sm font-medium border-b-2 transition -mb-px flex items-center gap-1.5 ${
+                        className={`py-3 px-4 text-xs font-medium border-b-2 transition -mb-px flex items-center gap-2 ${
                             activeTab === "posts"
-                                ? "border-blue-600 text-blue-600 font-semibold"
-                                : "border-transparent text-gray-500 hover:text-gray-900"
+                                ? "border-indigo-500 text-indigo-300 font-bold"
+                                : "border-transparent text-slate-400 hover:text-white"
                         }`}
                     >
-                        <span>📝 Research Discussions</span>
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
-                            {posts?.length || 0}
-                        </span>
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Research Publications ({posts?.length || 0})</span>
                     </button>
                     <button
                         onClick={() => setActiveTab("workspaces")}
-                        className={`px-4 py-3 text-xs sm:text-sm font-medium border-b-2 transition -mb-px flex items-center gap-1.5 ${
+                        className={`py-3 px-4 text-xs font-medium border-b-2 transition -mb-px flex items-center gap-2 ${
                             activeTab === "workspaces"
-                                ? "border-blue-600 text-blue-600 font-semibold"
-                                : "border-transparent text-gray-500 hover:text-gray-900"
+                                ? "border-indigo-500 text-indigo-300 font-bold"
+                                : "border-transparent text-slate-400 hover:text-white"
                         }`}
                     >
-                        <span>🏢 Public Workspaces</span>
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
-                            {workspaces?.length || 0}
-                        </span>
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Active Research Labs ({workspaces?.length || 0})</span>
                     </button>
                 </div>
-
-                {/* Content */}
-                {activeTab === "posts" && (
-                    <div className="space-y-4">
-                        {(!posts || posts.length === 0) ? (
-                            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-200">
-                                <p className="text-sm text-gray-500">No public research discussions published yet.</p>
-                            </div>
-                        ) : (
-                            posts.map(post => (
-                                <PostCard key={post._id} post={{ ...post, author: profile }} />
-                            ))
-                        )}
-                    </div>
-                )}
-
-                {activeTab === "workspaces" && (
-                    <div className="space-y-4">
-                        {(!workspaces || workspaces.length === 0) ? (
-                            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-200">
-                                <p className="text-sm text-gray-500">No public research workspaces active.</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {workspaces.map(ws => (
-                                    <Link
-                                        key={ws._id}
-                                        to={`/workspace/${ws._id}`}
-                                        className="block bg-white p-5 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-sm transition"
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="font-bold text-gray-900 text-sm">{ws.title}</h3>
-                                            <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded capitalize">
-                                                {ws.type}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-gray-600 line-clamp-2 mb-3">{ws.description}</p>
-                                        <span className="text-xs text-blue-600 font-medium">View Workspace →</span>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
 
-            {/* Collaboration Invite Modal */}
-            {showInviteModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-100">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold text-gray-900">Invite {profile.name} to Collaborate</h3>
-                            <button
-                                onClick={() => setShowInviteModal(false)}
-                                className="text-gray-400 hover:text-gray-600 text-lg"
-                            >
-                                ✕
-                            </button>
+            {/* TAB 1: POSTS */}
+            {activeTab === "posts" && (
+                <div className="space-y-4">
+                    {(!posts || posts.length === 0) ? (
+                        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs">
+                            No research publications or debates submitted yet by this researcher.
                         </div>
+                    ) : (
+                        posts.map(post => (
+                            <PostCard key={post._id} post={{ ...post, author: profile }} />
+                        ))
+                    )}
+                </div>
+            )}
 
-                        {inviteFeedback && (
-                            <div className={`p-3 rounded-lg text-xs mb-4 ${
-                                inviteFeedback.startsWith("✓")
-                                    ? "bg-green-50 text-green-700 border border-green-200"
-                                    : "bg-red-50 text-red-700 border border-red-200"
-                            }`}>
-                                {inviteFeedback}
+            {/* TAB 2: WORKSPACES */}
+            {activeTab === "workspaces" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(!workspaces || workspaces.length === 0) ? (
+                        <div className="col-span-full bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs">
+                            This scholar is not currently leading any public research labs.
+                        </div>
+                    ) : (
+                        workspaces.map(ws => (
+                            <div
+                                key={ws._id}
+                                onClick={() => navigate(`/workspace/${ws._id}`)}
+                                className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition cursor-pointer space-y-3"
+                            >
+                                <div className="flex justify-between items-start gap-2">
+                                    <h4 className="text-sm font-bold text-white hover:text-indigo-300 transition truncate">{ws.name}</h4>
+                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800 capitalize">
+                                        {ws.privacy}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{ws.description}</p>
+                                <span className="block text-[11px] font-mono text-indigo-400">
+                                    {ws.members?.length || 1} team members
+                                </span>
                             </div>
-                        )}
+                        ))
+                    )}
+                </div>
+            )}
 
+            {/* Invite Modal */}
+            {showInviteModal && (
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+                        <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                            <h3 className="text-base font-bold text-white">Invite {profile.name} to Lab</h3>
+                            <button onClick={() => setShowInviteModal(false)} className="text-slate-400 hover:text-white">✕</button>
+                        </div>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                            Select which research workspace you would like to invite this scholar to collaborate on.
+                        </p>
                         {myWorkspaces.length === 0 ? (
-                            <div className="text-center py-6">
-                                <p className="text-xs text-gray-500 mb-4">You do not have any active workspaces yet.</p>
-                                <Button
-                                    onClick={() => navigate('/workspace/create')}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
-                                >
-                                    Create a Research Workspace First
-                                </Button>
-                            </div>
+                            <p className="text-xs text-amber-400">You must create a research workspace first before inviting peers.</p>
                         ) : (
-                            <div className="space-y-4">
-                                <p className="text-xs text-gray-600 leading-relaxed">
-                                    Select the research workspace you want to add <strong>{profile.name}</strong> to as a collaborator:
-                                </p>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                                        Select Workspace
-                                    </label>
-                                    <select
-                                        value={selectedWorkspace}
-                                        onChange={(e) => setSelectedWorkspace(e.target.value)}
-                                        className="w-full p-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        {myWorkspaces.map(w => (
-                                            <option key={w._id} value={w._id}>
-                                                {w.title} ({w.privacy})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setShowInviteModal(false)}
-                                        className="text-xs"
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={handleSendInvite}
-                                        disabled={inviteSending}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-5"
-                                    >
-                                        {inviteSending ? "Inviting..." : "Send Workspace Invite"}
-                                    </Button>
-                                </div>
-                            </div>
+                            <select
+                                value={selectedWorkspace}
+                                onChange={(e) => setSelectedWorkspace(e.target.value)}
+                                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 outline-none"
+                            >
+                                {myWorkspaces.map(w => (
+                                    <option key={w._id} value={w._id}>{w.name}</option>
+                                ))}
+                            </select>
                         )}
+                        {inviteFeedback && (
+                            <p className="text-xs text-indigo-300">{inviteFeedback}</p>
+                        )}
+                        <div className="flex justify-end gap-2 pt-2">
+                            <Button variant="outline" onClick={() => setShowInviteModal(false)} className="bg-slate-950 border-slate-800 text-slate-300 text-xs h-9">
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleSendInvite}
+                                disabled={inviteSending || myWorkspaces.length === 0}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 px-4"
+                            >
+                                {inviteSending ? "Sending..." : "Send Invitation"}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}

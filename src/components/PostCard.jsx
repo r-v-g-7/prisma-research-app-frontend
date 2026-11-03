@@ -2,6 +2,23 @@ import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { toggleUpvotePost, toggleSavePost } from "@/services/post";
+import { 
+  FlaskConical, 
+  HelpCircle, 
+  GraduationCap, 
+  Sparkles, 
+  Users, 
+  Bell, 
+  FileText, 
+  Bookmark, 
+  ChevronUp, 
+  MessageSquare, 
+  ExternalLink, 
+  Layers,
+  Building2,
+  Calendar,
+  Share2
+} from "lucide-react";
 
 const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
     const { user } = useContext(AuthContext);
@@ -24,16 +41,51 @@ const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
         return new Date(date).toLocaleDateString();
     };
 
-    const getPostTypeDisplay = (type) => {
-        const types = {
-            research: { icon: '🔬', label: 'Research', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-            question: { icon: '💡', label: 'Question', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-            study: { icon: '🎓', label: 'Study', color: 'bg-green-50 text-green-700 border-green-200' },
-            showcase: { icon: '🚀', label: 'Project Showcase', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-            collaboration: { icon: '🤝', label: 'Collaboration', color: 'bg-teal-50 text-teal-700 border-teal-200' },
-            announcement: { icon: '📢', label: 'Announcement', color: 'bg-red-50 text-red-700 border-red-200' }
-        };
-        return types[type] || { icon: '📝', label: 'Post', color: 'bg-gray-50 text-gray-700 border-gray-200' };
+    const getPostTypeBadge = (type) => {
+        switch (type) {
+            case 'research':
+                return {
+                    icon: <FlaskConical className="w-3.5 h-3.5" />,
+                    label: 'Peer Research',
+                    badgeClass: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+                };
+            case 'question':
+                return {
+                    icon: <HelpCircle className="w-3.5 h-3.5" />,
+                    label: 'Open Question',
+                    badgeClass: 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                };
+            case 'study':
+                return {
+                    icon: <GraduationCap className="w-3.5 h-3.5" />,
+                    label: 'Replication Study',
+                    badgeClass: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                };
+            case 'showcase':
+                return {
+                    icon: <Sparkles className="w-3.5 h-3.5" />,
+                    label: 'Project Showcase',
+                    badgeClass: 'bg-purple-500/10 text-purple-300 border-purple-500/30'
+                };
+            case 'collaboration':
+                return {
+                    icon: <Users className="w-3.5 h-3.5" />,
+                    label: 'Call for Collaborators',
+                    badgeClass: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
+                };
+            case 'announcement':
+                return {
+                    icon: <Bell className="w-3.5 h-3.5" />,
+                    label: 'Academic Notice',
+                    badgeClass: 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+                };
+            default:
+                return {
+                    icon: <FileText className="w-3.5 h-3.5" />,
+                    label: 'Publication',
+                    badgeClass: 'bg-slate-500/10 text-slate-300 border-slate-500/30'
+                };
+        }
     };
 
     const handleUpvote = async (e) => {
@@ -64,7 +116,7 @@ const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
         } catch (err) {
             console.error("Save failed:", err);
         } finally {
-            setSaveLoading(false);
+            setUpvoteLoading(false);
         }
     };
 
@@ -82,120 +134,154 @@ const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
         navigate(`/workspace/create?postId=${post._id}&title=${encodeURIComponent(post.title)}`);
     };
 
-    const postTypeInfo = getPostTypeDisplay(post.type);
+    const badge = getPostTypeBadge(post.type);
 
     return (
-        <div className="block bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 overflow-hidden group">
-            <Link to={`/post/${post._id}`} className="block p-5 sm:p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
-                        {/* Avatar (Clickable to Public Profile) */}
-                        <div
-                            onClick={handleAuthorClick}
-                            className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-700 text-white rounded-full flex items-center justify-center font-semibold text-sm flex-shrink-0 shadow-xs cursor-pointer hover:ring-2 hover:ring-blue-400 transition"
-                            title={`View ${post.author?.name}'s profile`}
-                        >
-                            {post.author?.name?.charAt(0)?.toUpperCase()}
+        <article className="group bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 transition-all duration-200 hover:border-slate-700 hover:shadow-xl hover:shadow-indigo-500/5 relative overflow-hidden">
+            {/* Top Row: Author & Metadata */}
+            <div className="flex items-start justify-between gap-4 mb-3.5">
+                <div className="flex items-center gap-3 min-w-0">
+                    <button
+                        onClick={handleAuthorClick}
+                        className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shrink-0 transition hover:scale-105"
+                        title={`View ${post.author?.name || 'Researcher'}'s Profile`}
+                    >
+                        <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-xs font-bold text-white uppercase font-mono">
+                            {post.author?.name?.charAt(0) || "R"}
                         </div>
+                    </button>
 
-                        {/* Author Info */}
-                        <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span
-                                    onClick={handleAuthorClick}
-                                    className="font-semibold text-gray-900 text-sm hover:text-blue-600 transition cursor-pointer"
-                                >
-                                    {post.author?.name}
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                onClick={handleAuthorClick}
+                                className="text-xs font-bold text-slate-100 hover:text-indigo-300 transition truncate text-left"
+                            >
+                                {post.author?.name || "Independent Researcher"}
+                            </button>
+                            {post.author?.role && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 capitalize">
+                                    {post.author.role}
                                 </span>
-                                <span className="text-xs text-gray-400">•</span>
-                                <span className="text-xs text-gray-500 capitalize">
-                                    {post.author?.role}
-                                </span>
-                            </div>
-
-                            {post.author?.institution && (
-                                <p className="text-xs text-gray-400 truncate">
-                                    {post.author.institution} {post.author.fieldOfStudy && `| ${post.author.fieldOfStudy}`}
-                                </p>
                             )}
                         </div>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                            {post.author?.institution && (
+                                <span className="flex items-center gap-1 truncate max-w-[200px]">
+                                    <Building2 className="w-3 h-3 text-slate-500 shrink-0" />
+                                    {post.author.institution}
+                                </span>
+                            )}
+                            <span className="text-slate-600">·</span>
+                            <span className="flex items-center gap-1 text-slate-500 font-mono text-[10px]">
+                                <Calendar className="w-3 h-3 text-slate-600 shrink-0" />
+                                {getTimeAgo(post.createdAt)}
+                            </span>
+                        </div>
                     </div>
-
-                    {/* Post Type Badge */}
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap ${postTypeInfo.color}`}>
-                        {postTypeInfo.icon} {postTypeInfo.label}
-                    </span>
                 </div>
 
-                {/* Title */}
-                <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {post.title}
-                </h2>
+                {/* Post Type Badge (NO EMOJIS) */}
+                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border shrink-0 ${badge.badgeClass}`}>
+                    {badge.icon}
+                    <span>{badge.label}</span>
+                </div>
+            </div>
 
-                {/* Content Preview */}
-                <p className="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-3 leading-relaxed">
+            {/* Title & Excerpt */}
+            <Link to={`/post/${post._id}`} className="block group/link space-y-2 mb-4">
+                <h3 className="text-base sm:text-lg font-bold text-white group-hover/link:text-indigo-300 transition tracking-tight leading-snug">
+                    {post.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 line-clamp-3 leading-relaxed">
                     {post.content}
                 </p>
+            </Link>
 
-                {/* Tags and Metadata */}
-                <div className="flex items-center gap-1.5 flex-wrap mb-4">
-                    {post.tags && post.tags.map((tag, i) => (
-                        <span key={i} className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+            {/* DOI / Citation Badge if available */}
+            {post.doi && (
+                <div className="mb-4">
+                    <a
+                        href={`https://doi.org/${post.doi}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-950/50 border border-indigo-500/30 text-indigo-300 text-[11px] font-mono hover:bg-indigo-900/50 transition"
+                    >
+                        <span>DOI: {post.doi}</span>
+                        <ExternalLink className="w-3 h-3 text-indigo-400" />
+                    </a>
+                </div>
+            )}
+
+            {/* Topic Tags */}
+            {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                    {post.tags.map((tag, idx) => (
+                        <span
+                            key={idx}
+                            className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400 hover:text-slate-200 transition"
+                        >
                             #{tag}
                         </span>
                     ))}
-                    {post.doi && (
-                        <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100">
-                            DOI: {post.doi}
-                        </span>
-                    )}
+                </div>
+            )}
+
+            {/* Interactive Action Bar */}
+            <div className="pt-3.5 border-t border-slate-800/80 flex items-center justify-between gap-3 text-xs">
+                {/* Left metrics: Upvote & Comments */}
+                <div className="flex items-center gap-2">
+                    {/* Upvote Pill */}
+                    <button
+                        onClick={handleUpvote}
+                        disabled={upvoteLoading}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-mono font-medium transition ${
+                            upvoted
+                                ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40'
+                                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                        }`}
+                        title="Upvote academic contribution"
+                    >
+                        <ChevronUp className={`w-4 h-4 transition ${upvoted ? 'text-indigo-400 -translate-y-0.5' : 'text-slate-400'}`} />
+                        <span>{upvoteCount}</span>
+                    </button>
+
+                    {/* Comments Count */}
+                    <Link
+                        to={`/post/${post._id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition"
+                    >
+                        <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{post.comments?.length || 0}</span>
+                        <span className="hidden sm:inline text-slate-500">debates</span>
+                    </Link>
+
+                    {/* Bookmark Toggle */}
+                    <button
+                        onClick={handleSave}
+                        disabled={saveLoading}
+                        className={`p-1.5 rounded-lg border transition ${
+                            saved
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                        }`}
+                        title={saved ? "Saved in Library" : "Save to Research Library"}
+                    >
+                        <Bookmark className={`w-4 h-4 ${saved ? 'fill-emerald-400 text-emerald-400' : 'text-slate-400'}`} />
+                    </button>
                 </div>
 
-                {/* Footer Toolbar */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs text-gray-500">
-                    <div className="flex items-center gap-4">
-                        {/* Upvote Button */}
-                        <button
-                            onClick={handleUpvote}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition font-medium ${
-                                upvoted
-                                    ? "bg-blue-50 text-blue-700 font-semibold"
-                                    : "hover:bg-gray-100 text-gray-600"
-                            }`}
-                        >
-                            <span>{upvoted ? "▲" : "△"}</span>
-                            <span>{upvoteCount}</span>
-                        </button>
-
-                        {/* Save / Bookmark Button */}
-                        <button
-                            onClick={handleSave}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition font-medium ${
-                                saved
-                                    ? "bg-amber-50 text-amber-700 font-semibold"
-                                    : "hover:bg-gray-100 text-gray-600"
-                            }`}
-                        >
-                            <span>{saved ? "🔖" : "📑"}</span>
-                            <span>{saved ? "Saved" : "Save"}</span>
-                        </button>
-
-                        {/* Turn into Workspace Shortcut */}
-                        <button
-                            onClick={handleStartWorkspace}
-                            className="hidden sm:flex items-center gap-1 px-2.5 py-1 text-indigo-600 hover:bg-indigo-50 rounded-md transition font-medium"
-                            title="Start collaborative research workspace from this discussion"
-                        >
-                            <span>🤝</span>
-                            <span>Start Project</span>
-                        </button>
-                    </div>
-
-                    <span className="text-xs text-gray-400">{getTimeAgo(post.createdAt)}</span>
-                </div>
-            </Link>
-        </div>
+                {/* Right Action: DISCUSSION-TO-WORKSPACE CONTINUITY */}
+                <button
+                    onClick={handleStartWorkspace}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 font-medium transition hover:scale-[1.02] shadow-sm shrink-0"
+                    title="Initialize Collaborative Research Workspace from this Discussion"
+                >
+                    <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="font-medium">Start Research Lab</span>
+                </button>
+            </div>
+        </article>
     );
 };
 

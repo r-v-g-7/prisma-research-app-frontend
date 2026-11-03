@@ -4,6 +4,29 @@ import { fetchPost, toggleUpvotePost, toggleSavePost } from "@/services/post";
 import { createComment, fetchComments } from "@/services/comments";
 import { AuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { 
+  FlaskConical, 
+  HelpCircle, 
+  GraduationCap, 
+  Sparkles, 
+  Users, 
+  Bell, 
+  FileText, 
+  Bookmark, 
+  ChevronUp, 
+  MessageSquare, 
+  ExternalLink, 
+  Layers, 
+  Building2, 
+  Calendar, 
+  ArrowLeft, 
+  Share2, 
+  Send, 
+  ShieldCheck, 
+  Reply, 
+  CheckCircle2,
+  CornerDownRight
+} from "lucide-react";
 
 const PostDetail = () => {
     const { postId } = useParams();
@@ -19,6 +42,8 @@ const PostDetail = () => {
     const [upvoteCount, setUpvoteCount] = useState(0);
     const [saved, setSaved] = useState(false);
     const [saveFeedback, setSaveFeedback] = useState("");
+    const [replyingTo, setReplyingTo] = useState(null);
+    const [replyText, setReplyText] = useState("");
     const commentRef = useRef(null);
 
     useEffect(() => {
@@ -67,14 +92,15 @@ const PostDetail = () => {
         try {
             const res = await toggleSavePost(postId);
             setSaved(res.data.isSaved);
-            setSaveFeedback(res.data.isSaved ? "Saved to Library!" : "Removed from Library");
-            setTimeout(() => setSaveFeedback(""), 2000);
+            setSaveFeedback(res.data.isSaved ? "Saved to Library" : "Removed from Library");
+            setTimeout(() => setSaveFeedback(""), 2500);
         } catch (err) {
             console.error(err);
         }
     };
 
-    const handleCommentSubmit = async () => {
+    const handleCommentSubmit = async (e) => {
+        if (e) e.preventDefault();
         const content = commentRef.current?.value?.trim();
         if (!content) return;
         setSubmitting(true);
@@ -90,245 +116,353 @@ const PostDetail = () => {
         }
     };
 
-    const getPostTypeDisplay = (type) => {
-        const types = {
-            research: { icon: '🔬', label: 'Research', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-            question: { icon: '💡', label: 'Question', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-            study: { icon: '🎓', label: 'Study', color: 'bg-green-50 text-green-700 border-green-200' },
-            showcase: { icon: '🚀', label: 'Project Showcase', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-            collaboration: { icon: '🤝', label: 'Collaboration', color: 'bg-teal-50 text-teal-700 border-teal-200' },
-            announcement: { icon: '📢', label: 'Announcement', color: 'bg-red-50 text-red-700 border-red-200' }
-        };
-        return types[type] || { icon: '📝', label: 'Post', color: 'bg-gray-50 text-gray-700 border-gray-200' };
+    const handleNestedReplySubmit = async (parentCommentId) => {
+        if (!replyText.trim()) return;
+        setSubmitting(true);
+        try {
+            await createComment(postId, replyText.trim(), parentCommentId);
+            setReplyText("");
+            setReplyingTo(null);
+            loadComments();
+        } catch (err) {
+            console.error("Reply failed:", err);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const getPostTypeBadge = (type) => {
+        switch (type) {
+            case 'research':
+                return { icon: <FlaskConical className="w-3.5 h-3.5" />, label: 'Peer Research', badgeClass: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30' };
+            case 'question':
+                return { icon: <HelpCircle className="w-3.5 h-3.5" />, label: 'Open Question', badgeClass: 'bg-amber-500/10 text-amber-300 border-amber-500/30' };
+            case 'study':
+                return { icon: <GraduationCap className="w-3.5 h-3.5" />, label: 'Replication Study', badgeClass: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' };
+            case 'showcase':
+                return { icon: <Sparkles className="w-3.5 h-3.5" />, label: 'Project Showcase', badgeClass: 'bg-purple-500/10 text-purple-300 border-purple-500/30' };
+            case 'collaboration':
+                return { icon: <Users className="w-3.5 h-3.5" />, label: 'Call for Collaborators', badgeClass: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' };
+            default:
+                return { icon: <FileText className="w-3.5 h-3.5" />, label: 'Publication', badgeClass: 'bg-slate-500/10 text-slate-300 border-slate-500/30' };
+        }
     };
 
     if (loading) {
         return (
-            <div className="bg-gray-50 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-                <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                    <p className="text-gray-600 text-sm font-medium">Loading research inquiry...</p>
-                </div>
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center">
+                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-xs text-slate-400 font-mono">Loading Academic Discussion...</p>
             </div>
         );
     }
 
     if (!post) {
         return (
-            <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
-                <div className="text-center">
-                    <p className="text-xl text-gray-600 mb-4">Post not found</p>
-                    <Button onClick={() => navigate('/feed')} className="bg-blue-600 hover:bg-blue-700">
-                        Back to Feed
-                    </Button>
-                </div>
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center space-y-4">
+                <h2 className="text-lg font-bold text-white">Research Post Not Found</h2>
+                <Button onClick={() => navigate('/feed')} className="bg-indigo-600 text-white text-xs">
+                    Return to Feed
+                </Button>
             </div>
         );
     }
 
-    const postTypeInfo = getPostTypeDisplay(post.type);
+    const badge = getPostTypeBadge(post.type);
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-16">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-                {/* Back Button */}
+        <div className="space-y-6 pb-20 max-w-4xl mx-auto">
+            {/* Top Navigation Row */}
+            <div className="flex items-center justify-between">
                 <button
                     onClick={() => navigate('/feed')}
-                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors text-xs font-medium"
+                    className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition"
                 >
-                    <span>← Back to Feed</span>
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back to Knowledge Feed</span>
                 </button>
 
-                {/* Post Container */}
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6 shadow-sm">
-                    <div className="p-6 sm:p-8">
-                        {/* Author Header */}
-                        <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-100">
-                            <Link to={`/profile/${post.author?._id}`}>
-                                <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-indigo-700 text-white rounded-full flex items-center justify-center font-semibold text-xl shadow-xs flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition cursor-pointer">
-                                    {post.author?.name?.charAt(0)?.toUpperCase()}
-                                </div>
-                            </Link>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 flex-wrap">
-                                    <Link
-                                        to={`/profile/${post.author?._id}`}
-                                        className="font-bold text-gray-900 text-lg hover:text-blue-600 transition"
-                                    >
-                                        {post.author?.name}
-                                    </Link>
-                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${postTypeInfo.color}`}>
-                                        {postTypeInfo.icon} {postTypeInfo.label}
-                                    </span>
-                                </div>
-                                <p className="text-xs sm:text-sm text-gray-500 mt-1 capitalize">
-                                    {post.author?.role} {post.author?.institution && `• ${post.author.institution}`}
-                                </p>
-                                {post.author?.fieldOfStudy && (
-                                    <span className="inline-block mt-2 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 text-xs rounded-full border border-emerald-200">
-                                        🔬 {post.author.fieldOfStudy}
+                {saveFeedback && (
+                    <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                        {saveFeedback}
+                    </span>
+                )}
+            </div>
+
+            {/* Main Post Card */}
+            <article className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
+                {/* Header: Author + Badge */}
+                <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                        <Link
+                            to={`/profile/${post.author?._id}`}
+                            className="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shrink-0 transition hover:scale-105"
+                        >
+                            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-sm font-bold text-white uppercase font-mono">
+                                {post.author?.name?.charAt(0) || "R"}
+                            </div>
+                        </Link>
+
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <Link
+                                    to={`/profile/${post.author?._id}`}
+                                    className="text-sm font-bold text-white hover:text-indigo-300 transition"
+                                >
+                                    {post.author?.name || "Independent Researcher"}
+                                </Link>
+                                {post.author?.role && (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 capitalize">
+                                        {post.author.role}
                                     </span>
                                 )}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                                {post.author?.institution && (
+                                    <span className="flex items-center gap-1">
+                                        <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                                        {post.author.institution}
+                                    </span>
+                                )}
+                                <span className="text-slate-600">·</span>
+                                <span className="font-mono text-[11px] text-slate-500">
+                                    {new Date(post.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                                </span>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Post Content */}
-                        <article className="mb-6">
-                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-5 leading-tight">{post.title}</h1>
-                            <div className="prose prose-gray max-w-none">
-                                <p className="text-gray-800 text-sm sm:text-base leading-relaxed whitespace-pre-wrap">{post.content}</p>
-                            </div>
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${badge.badgeClass}`}>
+                        {badge.icon}
+                        <span>{badge.label}</span>
+                    </div>
+                </div>
 
-                            {/* Tags and Reference DOI */}
-                            <div className="flex flex-wrap items-center gap-2 mt-6 pt-5 border-t border-gray-100">
-                                {post.tags && post.tags.map((tag, i) => (
-                                    <span key={i} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-600 rounded-md">
-                                        #{tag}
-                                    </span>
-                                ))}
-                                {post.doi && (
-                                    <span className="text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-mono">
-                                        DOI: {post.doi}
-                                    </span>
-                                )}
-                                {post.paperLink && (
-                                    <a
-                                        href={post.paperLink}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-xs text-blue-600 underline hover:text-blue-800"
-                                    >
-                                        View Original Paper ↗
-                                    </a>
-                                )}
-                            </div>
-                        </article>
+                {/* Title */}
+                <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug">
+                    {post.title}
+                </h1>
 
-                        {/* Interactive Toolbar */}
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                            <div className="flex items-center gap-3">
-                                <Button
-                                    onClick={handleUpvote}
-                                    variant="outline"
-                                    className={`text-xs h-9 px-3.5 flex items-center gap-1.5 ${
-                                        upvoted ? "bg-blue-50 text-blue-700 border-blue-300 font-semibold" : ""
-                                    }`}
-                                >
-                                    <span>{upvoted ? "▲ Upvoted" : "△ Upvote"}</span>
-                                    <span>({upvoteCount})</span>
-                                </Button>
+                {/* Content */}
+                <div className="prose prose-invert max-w-none text-slate-200 text-sm leading-relaxed whitespace-pre-line border-t border-b border-slate-800/80 py-4">
+                    {post.content}
+                </div>
 
-                                <Button
-                                    onClick={handleSave}
-                                    variant="outline"
-                                    className={`text-xs h-9 px-3.5 flex items-center gap-1.5 ${
-                                        saved ? "bg-amber-50 text-amber-700 border-amber-300 font-semibold" : ""
-                                    }`}
-                                >
-                                    <span>{saved ? "🔖 Bookmarked" : "📑 Save for Later"}</span>
-                                </Button>
-
-                                {saveFeedback && (
-                                    <span className="text-xs text-emerald-600 font-medium">✓ {saveFeedback}</span>
-                                )}
-                            </div>
-
-                            <span className="text-xs text-gray-400">
-                                {new Date(post.createdAt).toLocaleDateString()}
+                {/* DOI / External Reference */}
+                {post.doi && (
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-slate-300">
+                            <span className="text-[10px] font-mono uppercase bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">
+                                Primary DOI
                             </span>
+                            <span className="font-mono text-indigo-300">{post.doi}</span>
                         </div>
+                        <a
+                            href={`https://doi.org/${post.doi}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+                        >
+                            <span>Open Article</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
                     </div>
-                </div>
+                )}
 
-                {/* Workspace Collaboration CTA (Core MVP Bridge) */}
-                <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-200 rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-                    <div>
-                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                            <span>🤝</span>
-                            <span>Turn this discussion into a Collaborative Workspace</span>
-                        </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 mt-1 max-w-xl leading-relaxed">
-                            Form a research team directly from this discussion. Automatically carry over the problem statement into a structured Research Brief, collect citations on an Evidence Board, and log decisions.
-                        </p>
+                {/* Tags */}
+                {post.tags && post.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        {post.tags.map((tag, idx) => (
+                            <span
+                                key={idx}
+                                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-slate-400"
+                            >
+                                #{tag}
+                            </span>
+                        ))}
                     </div>
-                    <Button
+                )}
+
+                {/* Post Footer Metrics & Continuity CTA */}
+                <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleUpvote}
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border font-mono text-xs font-medium transition ${
+                                upvoted
+                                    ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40'
+                                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+                            }`}
+                        >
+                            <ChevronUp className={`w-4 h-4 ${upvoted ? 'text-indigo-400' : 'text-slate-400'}`} />
+                            <span>{upvoteCount} Upvotes</span>
+                        </button>
+
+                        <button
+                            onClick={handleSave}
+                            className={`p-2 rounded-xl border text-xs font-medium transition ${
+                                saved
+                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+                            }`}
+                            title="Save to Research Library"
+                        >
+                            <Bookmark className={`w-4 h-4 ${saved ? 'fill-emerald-400 text-emerald-400' : 'text-slate-400'}`} />
+                        </button>
+                    </div>
+
+                    {/* DISCUSSION-TO-RESEARCH CONTINUITY HERO CTA */}
+                    <button
                         onClick={() => navigate(`/workspace/create?postId=${post._id}&title=${encodeURIComponent(post.title)}`)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs sm:text-sm px-5 py-2 whitespace-nowrap shadow-sm"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 transition border border-indigo-500/30"
                     >
-                        + Start Research Workspace
-                    </Button>
+                        <Layers className="w-4 h-4 text-indigo-200" />
+                        <span>Initialize Collaborative Workspace from Discussion</span>
+                    </button>
+                </div>
+            </article>
+
+            {/* Continuity Bridge Banner */}
+            <div className="bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-slate-900 border border-indigo-800/40 rounded-2xl p-5 flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                        Discussion-to-Research Continuity
+                    </h4>
+                    <p className="text-[11px] text-slate-400 max-w-xl">
+                        Spinning up a workspace will automatically migrate this question, relevant debate points, and cited papers directly into your team evidence board and literature library.
+                    </p>
+                </div>
+                <button
+                    onClick={() => navigate(`/workspace/create?postId=${post._id}&title=${encodeURIComponent(post.title)}`)}
+                    className="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-xs font-mono font-medium transition"
+                >
+                    Spin up Lab →
+                </button>
+            </div>
+
+            {/* Comments / Academic Debates Section */}
+            <section className="space-y-5">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-indigo-400" />
+                        <span>Academic Debates & Peer Responses ({comments.length})</span>
+                    </h3>
                 </div>
 
-                {/* Comments Section */}
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs">
-                    <div className="p-6 sm:p-8">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                                Academic Discussion <span className="text-gray-400 font-normal text-sm">({comments?.length || 0})</span>
-                            </h2>
+                {/* Comment Composer */}
+                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+                    <label className="block text-xs font-medium text-slate-300">
+                        Contribute Peer Methodology, Proofs, or Citations
+                    </label>
+                    <textarea
+                        ref={commentRef}
+                        rows={3}
+                        placeholder="Provide rigorous technical feedback, reference prior studies, or suggest alternative mathematical formulations..."
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none"
+                    />
+                    {commentError && (
+                        <p className="text-xs text-red-400">{commentError}</p>
+                    )}
+                    <div className="flex justify-end">
+                        <Button
+                            onClick={handleCommentSubmit}
+                            disabled={submitting}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 h-9 font-medium shadow-md shadow-indigo-600/20 border border-indigo-500/30 flex items-center gap-2"
+                        >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>{submitting ? "Publishing..." : "Submit Peer Response"}</span>
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Reddit-Style Nested Comment Tree */}
+                <div className="space-y-3">
+                    {comments.length === 0 ? (
+                        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs">
+                            No peer responses submitted yet. Be the first scholar to review this hypothesis!
                         </div>
-
-                        {/* Add Comment */}
-                        <div className="mb-8">
-                            <textarea
-                                ref={commentRef}
-                                className="w-full p-4 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400 text-xs sm:text-sm"
-                                rows="3"
-                                placeholder="Contribute empirical observations, suggest a methodology, or challenge assumptions..."
-                            />
-                            {commentError && (
-                                <p className="text-xs text-red-500 mt-2">{commentError}</p>
-                            )}
-                            <div className="flex justify-end mt-3">
-                                <Button
-                                    onClick={handleCommentSubmit}
-                                    disabled={submitting}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-xs font-medium disabled:opacity-50"
-                                >
-                                    {submitting ? "Publishing..." : "Contribute to Discussion"}
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Comments List */}
-                        <div className="space-y-4">
-                            {comments?.length === 0 && (
-                                <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-xl">
-                                    <p className="text-gray-500 text-xs sm:text-sm">No comments yet. Start the intellectual inquiry!</p>
-                                </div>
-                            )}
-
-                            {comments?.map((comment) => (
-                                <div key={comment._id} className="border border-gray-200 rounded-xl p-4 sm:p-5 hover:bg-gray-50/50 transition">
-                                    <div className="flex items-start gap-3">
-                                        <Link to={`/profile/${comment.author?._id}`}>
-                                            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-full flex items-center justify-center font-semibold text-xs flex-shrink-0 hover:ring-2 hover:ring-blue-400 transition cursor-pointer">
-                                                {comment.author?.name?.charAt(0)?.toUpperCase()}
-                                            </div>
-                                        </Link>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                <Link
-                                                    to={`/profile/${comment.author?._id}`}
-                                                    className="font-semibold text-gray-900 text-xs sm:text-sm hover:text-blue-600 transition"
-                                                >
-                                                    {comment.author?.name}
-                                                </Link>
-                                                <span className="text-xs text-gray-400">•</span>
-                                                <span className="text-xs text-gray-500 capitalize">{comment.author?.role}</span>
-                                                {comment.author?.institution && (
-                                                    <span className="text-xs text-gray-400">({comment.author.institution})</span>
-                                                )}
-                                            </div>
-                                            <p className="text-gray-700 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">{comment.content}</p>
+                    ) : (
+                        comments.map((comment) => (
+                            <div
+                                key={comment._id}
+                                className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3"
+                            >
+                                {/* Comment Header */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-7 h-7 rounded-lg bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300 font-mono">
+                                            {comment.author?.name?.charAt(0) || "R"}
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-bold text-slate-200">
+                                                {comment.author?.name || "Peer Researcher"}
+                                            </span>
+                                            {comment.author?.role && (
+                                                <span className="ml-2 text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.2 rounded border border-indigo-500/20 capitalize">
+                                                    {comment.author.role}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
+                                    <span className="text-[10px] font-mono text-slate-500">
+                                        {new Date(comment.createdAt).toLocaleDateString()}
+                                    </span>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+
+                                {/* Comment Content */}
+                                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line pl-1">
+                                    {comment.content}
+                                </p>
+
+                                {/* Comment Actions */}
+                                <div className="flex items-center gap-3 pt-2 text-xs border-t border-slate-800/60">
+                                    <button
+                                        onClick={() => setReplyingTo(replyingTo === comment._id ? null : comment._id)}
+                                        className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium transition"
+                                    >
+                                        <Reply className="w-3.5 h-3.5" />
+                                        <span>Reply</span>
+                                    </button>
+                                </div>
+
+                                {/* Nested Reply Composer */}
+                                {replyingTo === comment._id && (
+                                    <div className="pl-4 pt-2 border-l-2 border-indigo-500/40 space-y-2">
+                                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                                            <CornerDownRight className="w-3 h-3 text-indigo-400" />
+                                            <span>Replying to {comment.author?.name || "researcher"}</span>
+                                        </div>
+                                        <textarea
+                                            value={replyText}
+                                            onChange={(e) => setReplyText(e.target.value)}
+                                            rows={2}
+                                            placeholder="Write your counter-argument or clarification..."
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 outline-none"
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <Button
+                                                onClick={() => setReplyingTo(null)}
+                                                variant="ghost"
+                                                className="text-xs text-slate-400 hover:text-slate-200 h-8 px-3"
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleNestedReplySubmit(comment._id)}
+                                                disabled={submitting}
+                                                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8 px-3 font-medium"
+                                            >
+                                                Post Reply
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
                 </div>
-            </div>
+            </section>
         </div>
     );
 };

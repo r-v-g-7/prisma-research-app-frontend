@@ -1,8 +1,20 @@
-// Workspaces.jsx
 import React, { useEffect, useState } from 'react';
 import { fetchWorkspaces } from '@/services/workspace';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { 
+  Layers, 
+  Lock, 
+  Globe, 
+  Users, 
+  Calendar, 
+  ArrowRight, 
+  PlusCircle, 
+  Sparkles, 
+  Building2,
+  FileText,
+  CheckCircle2
+} from 'lucide-react';
 
 export const Workspaces = () => {
   const [workspaces, setWorkspaces] = useState([]);
@@ -13,7 +25,7 @@ export const Workspaces = () => {
     const loadWorkspaces = async () => {
       try {
         const data = await fetchWorkspaces();
-        setWorkspaces(data.data);
+        setWorkspaces(data.data || []);
       } catch (err) {
         console.error(err.message);
       } finally {
@@ -24,88 +36,122 @@ export const Workspaces = () => {
   }, []);
 
   if (loading) {
-    // Workspaces.jsx - Update the outermost div
     return (
-      <div className="bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-          {/* rest stays same */}
-          <div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading workspaces...</p>
-        </div>
+      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-xs text-slate-400 font-mono">Loading Collaborative Research Labs...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Workspaces</h1>
-            <p className="text-sm text-gray-600 mt-1">Collaborate on research projects</p>
+    <div className="space-y-6 pb-16">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-indigo-400 mb-1">
+            <Layers className="w-4 h-4" />
+            <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">
+              Prism Collaborative Ecosystem
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Research Labs & Workspaces</h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Conduct scientific research together with evidence boards, decision logs, and verified academic references.
+          </p>
+        </div>
+        <Button
+          onClick={() => navigate('/workspace/create')}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 h-10 font-medium rounded-xl shadow-md shadow-indigo-600/20 border border-indigo-500/30 flex items-center gap-2 self-start sm:self-auto"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>New Research Lab</span>
+        </Button>
+      </div>
+
+      {/* Empty State */}
+      {workspaces?.length === 0 && (
+        <div className="text-center py-16 bg-slate-900/60 border border-dashed border-slate-800 rounded-2xl p-8 space-y-4">
+          <div className="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto text-indigo-400">
+            <Layers className="w-6 h-6" />
+          </div>
+          <div className="max-w-sm mx-auto">
+            <h3 className="text-base font-bold text-white">No active research workspaces</h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Start a new research project or convert any discussion from the Knowledge Feed into a workspace.
+            </p>
           </div>
           <Button
             onClick={() => navigate('/workspace/create')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-sm font-medium"
+            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-5 h-9 rounded-xl font-medium"
           >
-            + New Workspace
+            Create First Research Lab
           </Button>
         </div>
+      )}
 
-        {/* Empty State */}
-        {workspaces?.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-xl border-2 border-dashed border-gray-300">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">🏢</span>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">No workspaces yet</h3>
-            <p className="text-sm text-gray-500 mb-6">Create a workspace to start collaborating</p>
-            <Button
-              onClick={() => navigate('/workspace/create')}
-              className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 text-sm"
-            >
-              Create First Workspace
-            </Button>
-          </div>
-        )}
-
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {workspaces?.map((workspace) => (
-            <div
-              key={workspace._id}
-              onClick={() => navigate(`/workspace/${workspace._id}`)}
-              className="bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer group"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                  {workspace.title || workspace.name}
-                </h3>
-                {workspace.privacy === 'private' && (
-                  <span className="text-gray-400 text-xs">🔒</span>
-                )}
-              </div>
-
-              <p className="text-xs text-gray-500 mb-3 line-clamp-2">
-                {workspace.description || 'No description'}
-              </p>
-
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-full flex items-center justify-center text-xs font-semibold">
-                    {workspace.creator?.name?.charAt(0)?.toUpperCase()}
-                  </div>
-                  <span className="text-xs text-gray-600">{workspace.creator?.name}</span>
+      {/* Workspaces Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {workspaces?.map((workspace) => (
+          <div
+            key={workspace._id}
+            onClick={() => navigate(`/workspace/${workspace._id}`)}
+            className="group bg-slate-900/90 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 hover:shadow-xl hover:shadow-indigo-500/5 transition cursor-pointer flex flex-col justify-between space-y-4"
+          >
+            <div className="space-y-3">
+              {/* Header: Title + Privacy Badge */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition truncate tracking-tight">
+                    {workspace.name}
+                  </h3>
+                  <p className="text-xs text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                    {workspace.description || "Active scientific inquiry and collaborative research repository."}
+                  </p>
                 </div>
-                <span className="text-xs text-gray-400">
-                  {workspace.members?.length} {workspace.members?.length === 1 ? 'member' : 'members'}
+
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-medium border shrink-0 ${
+                  workspace.privacy === 'private'
+                    ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                    : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                }`}>
+                  {workspace.privacy === 'private' ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                  <span>{workspace.privacy}</span>
                 </span>
               </div>
+
+              {/* Origin Post Indicator if linked */}
+              {workspace.post && (
+                <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-center gap-2 text-xs text-slate-300">
+                  <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <span className="truncate">Connected to Public Research Discussion</span>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+
+            {/* Footer: Members & Date */}
+            <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1.5 font-mono text-[11px] text-slate-300">
+                  <Users className="w-3.5 h-3.5 text-indigo-400" />
+                  {workspace.members?.length || 1} {workspace.members?.length === 1 ? 'member' : 'members'}
+                </span>
+                <span className="text-slate-600">·</span>
+                <span className="font-mono text-[11px] text-slate-500">
+                  {new Date(workspace.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+
+              <span className="text-indigo-400 group-hover:translate-x-0.5 transition flex items-center gap-1 font-medium text-xs">
+                <span>Enter Lab</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
+
+export default Workspaces;
