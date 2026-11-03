@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchPost, toggleUpvotePost, toggleSavePost } from "@/services/post";
 import { AuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/services/config";
 import ThreadedComments from "@/components/comments/ThreadedComments";
 import { 
   FlaskConical, 
@@ -20,7 +21,8 @@ import {
   ArrowLeft, 
   Share2, 
   Check,
-  CheckCircle2
+  CheckCircle2,
+  Download
 } from "lucide-react";
 
 const PostDetail = () => {
@@ -223,6 +225,79 @@ const PostDetail = () => {
                 <div className="text-slate-200 text-sm leading-relaxed whitespace-pre-line border-t border-b border-slate-800/80 py-4">
                     {post.content}
                 </div>
+
+                {/* Research Figures, Diagrams & Preprints */}
+                {post.attachments && post.attachments.length > 0 && (
+                    <div className="space-y-4 py-2">
+                        {/* High-Resolution Figures */}
+                        {post.attachments.filter(a => a.type === "image" || a.mimeType?.startsWith("image/")).map((img, idx) => {
+                            const src = img.url?.startsWith("http") ? img.url : `${API_BASE_URL}${img.url?.startsWith("/") ? "" : "/"}${img.url}`;
+                            return (
+                                <figure key={idx} className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/60 p-2 space-y-2">
+                                    <div className="overflow-hidden rounded-xl bg-slate-950 flex items-center justify-center max-h-[500px]">
+                                        <img
+                                            src={src}
+                                            alt={img.originalName || "Research figure"}
+                                            className="w-full h-auto object-contain max-h-[500px]"
+                                        />
+                                    </div>
+                                    <figcaption className="flex items-center justify-between px-2 text-xs text-slate-400">
+                                        <span className="font-mono">{img.originalName}</span>
+                                        <a
+                                            href={src}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            download
+                                            className="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 font-medium"
+                                        >
+                                            <Download className="w-3.5 h-3.5" />
+                                            <span>Full Resolution</span>
+                                        </a>
+                                    </figcaption>
+                                </figure>
+                            );
+                        })}
+
+                        {/* Attached Scientific Documents & Datasets */}
+                        {post.attachments.filter(a => a.type !== "image" && !a.mimeType?.startsWith("image/")).length > 0 && (
+                            <div className="space-y-2">
+                                <h4 className="text-xs font-mono uppercase text-slate-400">Attached Datasets & Preprints</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    {post.attachments
+                                        .filter(a => a.type !== "image" && !a.mimeType?.startsWith("image/"))
+                                        .map((doc, idx) => {
+                                            const fileUrl = doc.url?.startsWith("http") ? doc.url : `${API_BASE_URL}${doc.url?.startsWith("/") ? "" : "/"}${doc.url}`;
+                                            return (
+                                                <a
+                                                    key={idx}
+                                                    href={fileUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    download
+                                                    className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition group"
+                                                >
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                                                            <FileText className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-medium text-slate-200 truncate group-hover:text-indigo-300 transition">
+                                                                {doc.originalName}
+                                                            </p>
+                                                            <p className="text-[10px] font-mono text-slate-500">
+                                                                {doc.mimeType || "Document"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <Download className="w-4 h-4 text-slate-500 group-hover:text-indigo-300 transition shrink-0 ml-2" />
+                                                </a>
+                                            );
+                                        })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* DOI / External Reference */}
                 {post.doi && (

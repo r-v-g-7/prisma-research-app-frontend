@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { toggleUpvotePost, toggleSavePost } from "@/services/post";
+import { API_BASE_URL } from "@/services/config";
 import { 
   FlaskConical, 
   HelpCircle, 
@@ -16,7 +17,8 @@ import {
   Layers,
   Building2,
   Share2,
-  Check
+  Check,
+  Download
 } from "lucide-react";
 
 const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
@@ -191,10 +193,64 @@ const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
                 <h3 className="text-base font-bold text-white group-hover/link:text-indigo-300 transition tracking-tight leading-snug">
                     {post.title}
                 </h3>
-                <p className="text-xs sm:text-[13px] text-slate-300 line-clamp-2 leading-relaxed">
+                <p className="text-xs sm:text-[13px] text-slate-300 line-clamp-3 leading-relaxed">
                     {post.content}
                 </p>
             </Link>
+
+            {/* Research Attachments (Figures & Preprints) */}
+            {post.attachments && post.attachments.length > 0 && (
+                <div className="space-y-2 pt-1">
+                    {/* Image Attachments */}
+                    {post.attachments.filter(a => a.type === "image" || a.mimeType?.startsWith("image/")).length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-xl overflow-hidden border border-slate-800 bg-slate-950/40 p-1">
+                            {post.attachments
+                                .filter(a => a.type === "image" || a.mimeType?.startsWith("image/"))
+                                .slice(0, 2)
+                                .map((img, idx) => {
+                                    const src = img.url?.startsWith("http") ? img.url : `${API_BASE_URL}${img.url?.startsWith("/") ? "" : "/"}${img.url}`;
+                                    return (
+                                        <div key={idx} className="relative rounded-lg overflow-hidden group/img aspect-video bg-slate-950">
+                                            <img
+                                                src={src}
+                                                alt={img.originalName || "Research figure"}
+                                                className="w-full h-full object-cover group-hover/img:scale-105 transition duration-300"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition flex items-end p-2">
+                                                <span className="text-[11px] text-slate-200 truncate">{img.originalName}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    )}
+
+                    {/* Document Attachments */}
+                    {post.attachments.filter(a => a.type !== "image" && !a.mimeType?.startsWith("image/")).length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {post.attachments
+                                .filter(a => a.type !== "image" && !a.mimeType?.startsWith("image/"))
+                                .map((doc, idx) => {
+                                    const fileUrl = doc.url?.startsWith("http") ? doc.url : `${API_BASE_URL}${doc.url?.startsWith("/") ? "" : "/"}${doc.url}`;
+                                    return (
+                                        <a
+                                            key={idx}
+                                            href={fileUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 hover:text-indigo-300 hover:border-slate-700 transition"
+                                        >
+                                            <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                                            <span className="truncate max-w-[200px]">{doc.originalName}</span>
+                                            <Download className="w-3 h-3 text-slate-500 shrink-0" />
+                                        </a>
+                                    );
+                                })}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* DOI / External Reference (if present) */}
             {post.doi && (

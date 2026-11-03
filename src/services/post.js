@@ -91,7 +91,45 @@ export const fetchSavedPosts = async () => {
 
     const data = await response.json();
     if (!response.ok) {
-        throw new Error(data.message || "Failed to load saved research");
+        throw new Error(data.message || "Failed to fetch saved posts");
     }
     return data;
+};
+
+export const deletePost = async (postId) => {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BASE_URL}/post/delete/${postId}`, {
+        method: "DELETE",
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to delete post");
+    }
+    return data;
+};
+
+export const uploadPostAttachment = async (file) => {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/post/upload-attachment`, {
+        method: "POST",
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        body: formData
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to upload attachment");
+    }
+
+    return data.data; // { url, originalName, mimeType, size, type }
 };

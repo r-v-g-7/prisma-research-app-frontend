@@ -224,12 +224,35 @@ export default function WorkspaceMeetings({ workspaceId, isMember, workspaceBrie
             {loading ? (
                 <div className="py-12 text-center text-xs text-slate-400">Loading research meetings...</div>
             ) : meetings.length === 0 ? (
-                <div className="text-center py-14 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 p-8 space-y-2">
+                <div className="text-center py-14 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 p-8 space-y-4">
                     <Video className="w-10 h-10 text-emerald-500/40 mx-auto" />
-                    <h3 className="text-sm font-semibold text-white">No research meetings scheduled</h3>
-                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                        Launch a Google Meet room to discuss hypothesis validation, analyze telemetry, and sync action items.
-                    </p>
+                    <div className="space-y-1">
+                        <h3 className="text-sm font-semibold text-white">No research meetings scheduled</h3>
+                        <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                            Launch a Google Meet room to discuss hypothesis validation, analyze telemetry, and sync action items.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                        {isMember && (
+                            <Button
+                                onClick={() => setShowNewModal(true)}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-9 px-4 flex items-center gap-1.5"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Schedule Workspace Meeting</span>
+                            </Button>
+                        )}
+                        <a
+                            href="https://meet.google.com/new"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 hover:text-white hover:border-slate-700 text-xs font-medium transition"
+                        >
+                            <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Instant Google Meet</span>
+                        </a>
+                    </div>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-3">

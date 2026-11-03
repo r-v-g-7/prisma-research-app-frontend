@@ -908,7 +908,7 @@ const WorkspaceDetail = () => {
                 {activeTab === "meetings" && (
                     <WorkspaceMeetings
                         workspaceId={workspace._id}
-                        isMember={isMember}
+                        isMember={isMember || isCreator}
                         workspaceBrief={workspace.brief}
                     />
                 )}
@@ -917,7 +917,7 @@ const WorkspaceDetail = () => {
                 {activeTab === "files" && (
                     <WorkspaceFiles
                         workspaceId={workspace._id}
-                        isMember={isMember}
+                        isMember={isMember || isCreator}
                     />
                 )}
 
