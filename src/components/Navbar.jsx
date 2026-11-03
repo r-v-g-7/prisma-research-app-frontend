@@ -17,7 +17,8 @@ import {
   Search,
   CheckCircle2,
   Building2,
-  Settings
+  Settings,
+  BookOpen
 } from "lucide-react";
 
 const Navbar = () => {
