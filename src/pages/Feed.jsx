@@ -10,26 +10,20 @@ import {
   HelpCircle, 
   Users, 
   GraduationCap, 
-  Sparkles, 
-  Filter, 
-  TrendingUp, 
-  Clock, 
-  PlusCircle, 
-  Search, 
-  ShieldCheck, 
-  ArrowRight,
-  BookOpen
+  Plus, 
+  ArrowUpDown,
+  BookOpen,
+  Filter
 } from "lucide-react";
 
-const TOPICS = ["All", "EdgeAI", "Transformers", "Quantum", "Distributed Systems", "BioTech", "Robotics", "Algorithms"];
+const TOPICS = ["All", "Quantum", "EdgeAI", "Transformers", "Distributed Systems", "BioTech", "Robotics", "Algorithms"];
 
 const TYPES = [
-    { id: "all", label: "All Insights", icon: Compass },
-    { id: "research", label: "Peer Research", icon: FlaskConical },
-    { id: "question", label: "Open Questions", icon: HelpCircle },
-    { id: "collaboration", label: "Collaborations", icon: Users },
-    { id: "study", label: "Replication Studies", icon: GraduationCap },
-    { id: "showcase", label: "Showcases", icon: Sparkles }
+    { id: "all", label: "All Insights" },
+    { id: "research", label: "Peer Research" },
+    { id: "question", label: "Questions" },
+    { id: "collaboration", label: "Lab Calls" },
+    { id: "study", label: "Replications" }
 ];
 
 const Feed = () => {
@@ -52,7 +46,7 @@ const Feed = () => {
             const data = await fetchPosts(params);
             setPosts(data.data || []);
         } catch (err) {
-            console.error(err.message);
+            console.error("Failed to load feed:", err.message);
         } finally {
             setLoading(false);
         }
@@ -62,173 +56,106 @@ const Feed = () => {
         loadPosts();
     }, [selectedType, selectedTopic, sortBy]);
 
-    const isProfileIncomplete = user && (!user.bio || (!user.skills?.length && !user.interests?.length));
-
     return (
-        <div className="space-y-6 pb-16">
-            {/* Quick Proposal Box / Composer Trigger */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shrink-0">
-                        <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-xs font-bold text-white uppercase font-mono">
-                            {user?.name?.charAt(0) || "U"}
-                        </div>
-                    </div>
+        <div className="min-w-0 max-w-3xl mx-auto space-y-5 pb-16">
+            {/* Compact Unobtrusive Discussion Entry Bar */}
+            {user && (
+                <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-3 shadow-sm flex items-center gap-3">
+                    <Link
+                        to="/profile"
+                        className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700/60 flex items-center justify-center text-xs font-bold text-slate-200 uppercase font-mono shrink-0 hover:border-slate-500 transition"
+                    >
+                        {user.name?.charAt(0) || "U"}
+                    </Link>
+
                     <button
                         onClick={() => navigate('/create-post')}
-                        className="flex-1 text-left px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs sm:text-sm text-slate-400 hover:text-slate-200 hover:border-slate-700 transition"
+                        className="flex-1 text-left px-3.5 py-1.5 rounded-lg bg-slate-950 border border-slate-850 text-xs text-slate-400 hover:text-slate-200 hover:border-slate-700 transition truncate"
                     >
-                        Publish a research question, hypothesis, or methodology inquiry...
+                        Start a scientific discussion or propose an open question...
                     </button>
-                    <Link to="/create-post" className="hidden sm:block">
-                        <Button className="h-10 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 rounded-xl font-medium shadow-md shadow-indigo-600/20 border border-indigo-500/30 flex items-center gap-2">
-                            <PlusCircle className="w-4 h-4" />
-                            <span>Publish</span>
-                        </Button>
-                    </Link>
-                </div>
-            </div>
 
-            {/* Profile Completion Callout */}
-            {isProfileIncomplete && (
-                <div className="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-purple-950/60 border border-indigo-800/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-3.5">
-                        <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                            <ShieldCheck className="w-5 h-5 text-indigo-400" />
-                        </div>
-                        <div>
-                            <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                                Complete your Verified Academic Identity
-                            </h3>
-                            <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
-                                Add your research methodologies, lab affiliations, and target publications so other scholars can invite you to collaborative research workspaces.
-                            </p>
-                        </div>
-                    </div>
-                    <Link to="/profile" className="self-start sm:self-center shrink-0">
-                        <button className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
-                            <span>Complete Profile</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
+                    <Link to="/create-post" className="shrink-0">
+                        <Button className="h-8 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 rounded-lg font-medium shadow-sm flex items-center gap-1.5">
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>New Post</span>
+                        </Button>
                     </Link>
                 </div>
             )}
 
-            {/* Feed Controls Header: Categories & Sorting */}
-            <div className="space-y-4">
-                {/* Type Filter Pills (ZERO EMOJIS) */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                    {TYPES.map((type) => {
-                        const Icon = type.icon;
-                        const isSelected = selectedType === type.id;
-                        return (
+            {/* Filter Tabs & Sort Controls */}
+            <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-2">
+                    {/* Category Type Pills */}
+                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+                        {TYPES.map(type => (
                             <button
                                 key={type.id}
                                 onClick={() => setSelectedType(type.id)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-2 shrink-0 border ${
-                                    isSelected
-                                        ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 shadow-sm font-semibold'
-                                        : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/60'
+                                className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition ${
+                                    selectedType === type.id
+                                        ? "bg-slate-800 text-white font-semibold"
+                                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
                                 }`}
                             >
-                                <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-indigo-400' : 'text-slate-500'}`} />
-                                <span>{type.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Sub-bar: Topics & Sort Toggle */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                    {/* Topic Pills */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mr-1 shrink-0">
-                            Discipline:
-                        </span>
-                        {TOPICS.map((topic) => (
-                            <button
-                                key={topic}
-                                onClick={() => setSelectedTopic(topic)}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-mono transition shrink-0 border ${
-                                    selectedTopic === topic
-                                        ? 'bg-slate-800 text-white border-slate-700 font-semibold'
-                                        : 'bg-slate-950/40 border-slate-800/60 text-slate-400 hover:text-slate-200'
-                                }`}
-                            >
-                                {topic === "All" ? "All Topics" : `#${topic}`}
+                                {type.label}
                             </button>
                         ))}
                     </div>
 
-                    {/* Sort by */}
-                    <div className="flex items-center gap-1.5 shrink-0 bg-slate-900/80 border border-slate-800 p-1 rounded-xl self-start sm:self-auto">
-                        <button
-                            onClick={() => setSortBy("latest")}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5 ${
-                                sortBy === "latest"
-                                    ? 'bg-slate-800 text-white shadow-xs'
-                                    : 'text-slate-400 hover:text-white'
-                            }`}
+                    {/* Sort Order Selector */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="bg-slate-900 border border-slate-800 text-xs text-slate-300 rounded-md px-2 py-1 focus:outline-none focus:border-indigo-500"
                         >
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            <span>Recent</span>
-                        </button>
-                        <button
-                            onClick={() => setSortBy("top")}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5 ${
-                                sortBy === "top"
-                                    ? 'bg-slate-800 text-white shadow-xs'
-                                    : 'text-slate-400 hover:text-white'
-                            }`}
-                        >
-                            <TrendingUp className="w-3 h-3 text-slate-400" />
-                            <span>Top Debates</span>
-                        </button>
+                            <option value="latest">Latest Discussions</option>
+                            <option value="top">Most Upvoted</option>
+                        </select>
                     </div>
+                </div>
+
+                {/* Topic Badges (Secondary Scroll) */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+                    {TOPICS.map(topic => (
+                        <button
+                            key={topic}
+                            onClick={() => setSelectedTopic(topic)}
+                            className={`px-2.5 py-0.5 rounded-md text-[11px] font-mono transition whitespace-nowrap ${
+                                selectedTopic === topic
+                                    ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30"
+                                    : "bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800"
+                            }`}
+                        >
+                            {topic === "All" ? "All Topics" : `#${topic}`}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Posts Stream */}
-            <div className="space-y-4">
-                {loading ? (
-                    <div className="space-y-4">
-                        {[1, 2, 3].map((n) => (
-                            <div key={n} className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 animate-pulse space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-slate-800 rounded-xl" />
-                                    <div className="space-y-2 flex-1">
-                                        <div className="h-3 w-1/4 bg-slate-800 rounded" />
-                                        <div className="h-2 w-1/3 bg-slate-850 rounded" />
-                                    </div>
-                                </div>
-                                <div className="h-4 w-3/4 bg-slate-800 rounded" />
-                                <div className="h-3 w-full bg-slate-800/50 rounded" />
-                            </div>
-                        ))}
-                    </div>
-                ) : posts.length === 0 ? (
-                    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center space-y-4">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
-                            <BookOpen className="w-6 h-6" />
-                        </div>
-                        <div className="max-w-sm mx-auto">
-                            <h3 className="text-base font-bold text-white">No research posts found</h3>
-                            <p className="text-xs text-slate-400 mt-1">
-                                No discussions match this combination of discipline and category. Start the first debate!
-                            </p>
-                        </div>
-                        <Link to="/create-post">
-                            <Button className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 h-9 rounded-xl font-medium shadow-md shadow-indigo-600/20">
-                                Start Research Discussion
-                            </Button>
-                        </Link>
-                    </div>
-                ) : (
-                    posts.map((post) => (
+            {/* Posts Feed List */}
+            {loading ? (
+                <div className="py-16 text-center text-xs text-slate-400">
+                    Loading research discussions...
+                </div>
+            ) : posts.length === 0 ? (
+                <div className="text-center py-16 bg-slate-900/40 rounded-xl border border-dashed border-slate-800 p-8 space-y-2">
+                    <BookOpen className="w-8 h-8 text-slate-600 mx-auto" />
+                    <h3 className="text-sm font-semibold text-white">No discussions found</h3>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                        No research posts match the selected category or topic. Try resetting your filters.
+                    </p>
+                </div>
+            ) : (
+                <div className="space-y-3.5">
+                    {posts.map(post => (
                         <PostCard key={post._id} post={post} />
-                    ))
-                )}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

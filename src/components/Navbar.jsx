@@ -45,18 +45,16 @@ const Navbar = () => {
                 <div className="flex items-center justify-between h-16 gap-4">
                     {/* LEFT: Brand + Primary Navigation */}
                     <div className="flex items-center gap-6">
-                        <Link to="/feed" className="flex items-center gap-3 group">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-md shadow-indigo-500/20 group-hover:scale-105 transition">
-                                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                                    <Sparkles className="w-4 h-4 text-indigo-400" />
-                                </div>
+                        <Link to="/feed" className="flex items-center gap-2.5 group">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-mono font-bold text-sm shadow-sm group-hover:bg-indigo-500 transition">
+                                P
                             </div>
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-base font-bold text-white tracking-tight font-mono leading-none">PRISM</span>
-                                    <span className="px-1.5 py-0.2 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] font-mono rounded">RESEARCH</span>
+                                    <span className="text-sm font-bold text-white tracking-tight font-mono leading-none">PRISM</span>
+                                    <span className="px-1 py-0.2 bg-slate-800 text-slate-400 border border-slate-700 text-[9px] font-mono rounded">RESEARCH</span>
                                 </div>
-                                <span className="text-[10px] text-slate-400 font-medium tracking-wide">Scientific Collaboration Platform</span>
+                                <span className="text-[10px] text-slate-400 font-medium">Scientific Community</span>
                             </div>
                         </Link>
 
@@ -131,16 +129,16 @@ const Navbar = () => {
                             <div className="relative">
                                 <button
                                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                                    className="flex items-center gap-2.5 p-1 rounded-xl hover:bg-slate-800/80 transition border border-transparent hover:border-slate-700"
+                                    className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-800 transition"
                                 >
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                                    <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700/60 flex items-center justify-center text-slate-200 font-bold text-xs">
                                         {user?.name?.charAt(0)?.toUpperCase() || "R"}
                                     </div>
                                     <div className="text-left hidden lg:block pr-1">
                                         <p className="text-xs font-semibold text-slate-100 truncate max-w-[120px] leading-tight">
                                             {user?.name}
                                         </p>
-                                        <p className="text-[10px] text-indigo-400 font-mono capitalize leading-none mt-0.5">
+                                        <p className="text-[10px] text-slate-400 font-mono capitalize leading-none mt-0.5">
                                             {user?.role || "Researcher"}
                                         </p>
                                     </div>

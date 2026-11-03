@@ -5,6 +5,10 @@ import { Navigate } from "react-router-dom";
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useContext(AuthContext);
 
+    const hasStoredSession = Boolean(
+        localStorage.getItem("token") && localStorage.getItem("user")
+    );
+
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -16,7 +20,7 @@ const ProtectedRoute = ({ children }) => {
         );
     }
 
-    if (!user) {
+    if (!user && !hasStoredSession) {
         return <Navigate to="/login" replace />;
     }
 
