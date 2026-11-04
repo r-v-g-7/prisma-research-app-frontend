@@ -4,38 +4,70 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 226 70% 55.5%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 214.3 31.8% 91.4%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 226 70% 55.5%;
-    --radius: 0.625rem;
+    --background: 210 40% 98%;          /* #F8FAFC */
+    --foreground: 221 38% 14.5%;        /* #172033 */
+    --card: 0 0% 100%;                  /* #FFFFFF */
+    --card-foreground: 221 38% 14.5%;   /* #172033 */
+    --popover: 0 0% 100%;               /* #FFFFFF */
+    --popover-foreground: 221 38% 14.5%;/* #172033 */
+    --primary: 243.4 75.4% 58.6%;       /* #4F46E5 */
+    --primary-foreground: 0 0% 100%;    /* #FFFFFF */
+    --secondary: 210 40% 96.1%;         /* #F1F5F9 */
+    --secondary-foreground: 221 38% 14.5%;
+    --muted: 210 40% 96.1%;             /* #F1F5F9 */
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748B */
+    --accent: 225.9 100% 96.7%;         /* #EEF2FF */
+    --accent-foreground: 243.4 75.4% 58.6%;
+    --destructive: 0 72.2% 50.6%;       /* #DC2626 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%;        /* #E2E8F0 */
+    --input: 214.3 31.8% 91.4%;         /* #E2E8F0 */
+    --ring: 243.4 75.4% 58.6%;          /* #4F46E5 */
+    --radius: 0.5rem;
+
+    /* Explicit Prism Design System Hex Variables */
+    --prism-bg: #F8FAFC;
+    --prism-surface: #FFFFFF;
+    --prism-text: #172033;
+    --prism-muted: #64748B;
+    --prism-brand: #4F46E5;
+    --prism-brand-hover: #4338CA;
+    --prism-border: #E2E8F0;
+    --prism-accent: #EEF2FF;
+    --prism-success: #15803D;
+    --prism-warning: #D97706;
+    --prism-error: #DC2626;
+  }
+
+  * {
+    border-color: #E2E8F0;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #F8FAFC;
+    color: #172033;
+    line-height: 1.5;
   }
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f8fafc;
-  color: #0f172a;
+@layer components {
+  .prism-card {
+    @apply bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_2px_rgba(23,32,51,0.04)];
+  }
+
+  .prism-label {
+    @apply block text-xs font-medium text-[#172033] mb-1.5;
+  }
+
+  .prism-textarea {
+    @apply w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2.5 text-sm text-[#172033] placeholder:text-[#64748B] transition-colors focus:outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/15;
+  }
 }
 
-/* Custom subtle scrollbars for dense research feeds and sidebars */
+/* Subtle scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -44,28 +76,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #CBD5E1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Academic card & badge accents */
-.prism-glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.prism-card-shadow {
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
-}
-
-.prism-card-hover {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.prism-card-hover:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  background: #94A3B8;
 }

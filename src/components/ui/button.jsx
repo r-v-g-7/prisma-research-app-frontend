@@ -1,29 +1,31 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { cva } from "class-variance-authority";
+import { cva } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5]/25 focus-visible:border-[#4F46E5] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+          "bg-[#4F46E5] text-white shadow-[0_1px_2px_rgba(23,32,51,0.06)] hover:bg-[#4338CA]",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-[#DC2626] text-white shadow-[0_1px_2px_rgba(23,32,51,0.06)] hover:bg-red-700",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+          "border border-[#E2E8F0] bg-white text-[#172033] shadow-[0_1px_2px_rgba(23,32,51,0.03)] hover:bg-[#F8FAFC] hover:border-slate-300",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-[#EEF2FF] text-[#4F46E5] border border-indigo-200/70 hover:bg-indigo-100/70",
+        ghost:
+          "text-[#64748B] hover:bg-slate-100 hover:text-[#172033]",
+        link:
+          "text-[#4F46E5] underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
+        default: "h-9 px-4 py-2 text-sm",
+        sm: "h-8 rounded-lg px-3 text-xs",
+        lg: "h-10 rounded-lg px-5 text-sm",
         icon: "h-9 w-9",
       },
     },
@@ -40,8 +42,9 @@ const Button = React.forwardRef(({ className, variant, size, asChild = false, ..
     <Comp
       className={cn(buttonVariants({ variant, size, className }))}
       ref={ref}
-      {...props} />
-  );
+      {...props}
+    />
+  )
 })
 Button.displayName = "Button"
 

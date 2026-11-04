@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { getZoteroCollections, getZoteroItems } from "@/services/integrations";
 import { importZoteroToWorkspace } from "@/services/discovery";
 import { Button } from "@/components/ui/button";
@@ -7,8 +8,6 @@ import {
     FolderKanban,
     Check,
     X,
-    FileText,
-    BookOpen,
     AlertCircle,
     Loader2
 } from "lucide-react";
@@ -28,18 +27,19 @@ export default function ZoteroImportModal({ workspaceId, isOpen, onClose, onImpo
             setLoadingCollections(true);
             setError("");
             getZoteroCollections()
-                .then(res => {
+                .then((res) => {
                     const list = res.data || [];
                     setCollections(list);
                     if (list.length > 0) {
                         setSelectedCollection(list[0].key);
                     } else {
-                        // Load library root items
                         loadItems("");
                     }
                 })
-                .catch(err => {
-                    setError(err.message || "Could not fetch Zotero collections. Is Zotero connected in Settings?");
+                .catch((err) => {
+                    setError(
+                        err.message || "Could not fetch Zotero collections. Connect Zotero in Integrations first."
+                    );
                 })
                 .finally(() => setLoadingCollections(false));
         }
@@ -52,9 +52,10 @@ export default function ZoteroImportModal({ workspaceId, isOpen, onClose, onImpo
             const res = await getZoteroItems(collectionKey);
             const itemList = res.data || [];
             setItems(itemList);
-            // Default select all items
             const initialMap = {};
-            itemList.forEach(item => { initialMap[item.zoteroKey] = true; });
+            itemList.forEach((item) => {
+                initialMap[item.zoteroKey] = true;
+            });
             setSelectedItemKeys(initialMap);
         } catch (err) {
             setError(err.message || "Failed to load Zotero items");
@@ -70,14 +71,14 @@ export default function ZoteroImportModal({ workspaceId, isOpen, onClose, onImpo
     }, [selectedCollection]);
 
     const toggleItem = (key) => {
-        setSelectedItemKeys(prev => ({
+        setSelectedItemKeys((prev) => ({
             ...prev,
             [key]: !prev[key]
         }));
     };
 
     const handleImportSubmit = async () => {
-        const selectedItems = items.filter(item => selectedItemKeys[item.zoteroKey]);
+        const selectedItems = items.filter((item) => selectedItemKeys[item.zoteroKey]);
         if (selectedItems.length === 0) {
             alert("Please select at least one reference to import.");
             return;
@@ -103,44 +104,47 @@ export default function ZoteroImportModal({ workspaceId, isOpen, onClose, onImpo
     const selectedCount = Object.values(selectedItemKeys).filter(Boolean).length;
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 !mt-0 z-50 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+            <div className="bg-white border border-[#E2E8F0] rounded-xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-xl overflow-hidden">
                 {/* Header */}
-                <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+                <div className="px-5 py-4 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]">
                     <div className="flex items-center gap-2">
-                        <Library className="w-5 h-5 text-rose-400" />
-                        <h3 className="text-sm sm:text-base font-bold text-white">
+                        <Library className="w-4 h-4 text-[#4F46E5]" />
+                        <h3 className="text-base font-semibold text-[#172033]">
                             Import from Zotero Library
                         </h3>
                     </div>
-                    <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white">
-                        <X className="w-5 h-5" />
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-1 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-slate-100 transition"
+                    >
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
 
                 {/* Error Banner */}
                 {error && (
-                    <div className="m-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-xs flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                    <div className="mx-5 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-[#DC2626] text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
                         <span>{error}</span>
                     </div>
                 )}
 
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                    {/* Collection Selector */}
                     {collections.length > 0 && (
                         <div className="flex items-center gap-3">
-                            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 shrink-0">
-                                <FolderKanban className="w-4 h-4 text-indigo-400" />
-                                <span>Collection:</span>
+                            <label className="text-xs font-medium text-[#172033] flex items-center gap-1.5 shrink-0">
+                                <FolderKanban className="w-4 h-4 text-[#4F46E5]" />
+                                <span>Collection</span>
                             </label>
                             <select
                                 value={selectedCollection}
                                 onChange={(e) => setSelectedCollection(e.target.value)}
-                                className="bg-slate-950 border border-slate-800 text-xs text-white rounded-lg px-3 py-2 flex-1 focus:outline-none focus:border-indigo-500"
+                                className="h-9 bg-white border border-[#E2E8F0] text-sm text-[#172033] rounded-lg px-3 flex-1 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]"
                             >
-                                {collections.map(col => (
+                                {collections.map((col) => (
                                     <option key={col.key} value={col.key}>
                                         {col.name} ({col.numItems} items)
                                     </option>
@@ -149,45 +153,63 @@ export default function ZoteroImportModal({ workspaceId, isOpen, onClose, onImpo
                         </div>
                     )}
 
-                    {/* Items List */}
-                    {loadingItems ? (
-                        <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                    {loadingCollections || loadingItems ? (
+                        <div className="py-12 text-center text-sm text-[#64748B] flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-[#4F46E5]" />
                             <span>Loading bibliographic references...</span>
                         </div>
+                    ) : error && items.length === 0 ? (
+                        <div className="py-10 text-center space-y-2.5">
+                            <p className="text-sm text-[#64748B]">
+                                Connect your Zotero User ID and API Key to browse and sync collections directly into this lab.
+                            </p>
+                            <Link
+                                to="/settings"
+                                onClick={onClose}
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-[#4F46E5] hover:text-[#4338CA] hover:underline"
+                            >
+                                <span>Configure Zotero in Integrations →</span>
+                            </Link>
+                        </div>
                     ) : items.length === 0 ? (
-                        <div className="py-12 text-center text-xs text-slate-500">
+                        <div className="py-12 text-center text-sm text-[#64748B]">
                             No bibliographic items found in this collection.
                         </div>
                     ) : (
                         <div className="space-y-2">
-                            <div className="flex justify-between items-center text-xs text-slate-400 pb-1">
+                            <div className="flex justify-between items-center text-xs text-[#64748B] pb-1">
                                 <span>Found {items.length} references</span>
-                                <span>{selectedCount} selected</span>
+                                <span className="font-medium text-[#172033]">{selectedCount} selected</span>
                             </div>
 
-                            {items.map(item => {
+                            {items.map((item) => {
                                 const isSelected = Boolean(selectedItemKeys[item.zoteroKey]);
                                 return (
                                     <div
                                         key={item.zoteroKey}
                                         onClick={() => toggleItem(item.zoteroKey)}
-                                        className={`p-3 rounded-xl border text-xs cursor-pointer transition flex items-start gap-3 ${
+                                        className={`p-3 rounded-lg border text-xs cursor-pointer transition flex items-start gap-3 ${
                                             isSelected
-                                                ? 'bg-indigo-950/20 border-indigo-500/40 text-white'
-                                                : 'bg-slate-950 border-slate-800/80 text-slate-400 hover:border-slate-700'
+                                                ? "bg-[#EEF2FF]/70 border-indigo-200 text-[#172033]"
+                                                : "bg-white border-[#E2E8F0] text-[#64748B] hover:border-slate-300"
                                         }`}
                                     >
-                                        <div className={`w-4 h-4 rounded border mt-0.5 flex items-center justify-center shrink-0 ${
-                                            isSelected ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-slate-700 bg-slate-900'
-                                        }`}>
+                                        <div
+                                            className={`w-4 h-4 rounded border mt-0.5 flex items-center justify-center shrink-0 ${
+                                                isSelected
+                                                    ? "bg-[#4F46E5] border-[#4F46E5] text-white"
+                                                    : "border-slate-300 bg-white"
+                                            }`}
+                                        >
                                             {isSelected && <Check className="w-3 h-3" />}
                                         </div>
 
                                         <div className="space-y-0.5 min-w-0">
-                                            <p className="font-semibold text-white truncate">{item.title}</p>
-                                            {item.authors && <p className="text-[11px] text-slate-400 truncate">{item.authors}</p>}
-                                            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                            <p className="font-semibold text-[#172033] truncate">{item.title}</p>
+                                            {item.authors && (
+                                                <p className="text-xs text-[#64748B] truncate">{item.authors}</p>
+                                            )}
+                                            <div className="flex items-center gap-2 text-[11px] text-[#64748B] flex-wrap">
                                                 {item.publicationTitle && <span>{item.publicationTitle}</span>}
                                                 {item.year && <span>({item.year})</span>}
                                                 {item.doi && <span className="font-mono">DOI: {item.doi}</span>}
@@ -201,19 +223,13 @@ export default function ZoteroImportModal({ workspaceId, isOpen, onClose, onImpo
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-slate-800 flex items-center justify-between bg-slate-950">
-                    <Button
-                        variant="outline"
-                        onClick={onClose}
-                        className="bg-slate-900 border-slate-800 text-slate-300 text-xs h-9"
-                    >
+                <div className="px-5 py-3.5 border-t border-[#E2E8F0] flex items-center justify-end gap-2.5 bg-[#F8FAFC]">
+                    <Button variant="outline" onClick={onClose}>
                         Cancel
                     </Button>
-
                     <Button
                         onClick={handleImportSubmit}
                         disabled={importing || selectedCount === 0}
-                        className="bg-rose-600 hover:bg-rose-500 text-white text-xs h-9 px-4"
                     >
                         {importing ? "Importing..." : `Import ${selectedCount} References`}
                     </Button>

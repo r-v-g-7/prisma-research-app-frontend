@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 
-const SearchBar = () => {
+const SearchBar = ({ onSubmitted }) => {
     const [query, setQuery] = useState("");
     const navigate = useNavigate();
 
@@ -10,24 +10,27 @@ const SearchBar = () => {
         e.preventDefault();
         if (!query.trim()) return;
         navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+        if (onSubmitted) onSubmitted();
     };
 
     return (
-        <form onSubmit={handleSearch} className="relative w-full max-w-md">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+        <form onSubmit={handleSearch} className="relative w-full">
+            <Search className="w-4 h-4 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search topics, DOIs, researchers..."
-                className="w-full pl-9 pr-14 py-1.5 bg-slate-100/90 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 outline-none transition"
+                placeholder="Search discussions, papers, labs, or scholars..."
+                className="w-full h-9 pl-9 pr-16 bg-[#F8FAFC] hover:bg-slate-100/70 focus:bg-white border border-[#E2E8F0] focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/15 rounded-lg text-sm text-[#172033] placeholder:text-[#64748B] outline-none transition-colors"
             />
-            <button
-                type="submit"
-                className="absolute right-1 top-1 px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-medium rounded-md shadow-2xs transition"
-            >
-                Search
-            </button>
+            {query.trim() && (
+                <button
+                    type="submit"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-6 px-2 bg-white hover:bg-[#EEF2FF] text-[#4F46E5] border border-[#E2E8F0] text-xs font-medium rounded transition-colors"
+                >
+                    Search
+                </button>
+            )}
         </form>
     );
 };

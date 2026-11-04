@@ -11,10 +11,10 @@ const ProtectedRoute = ({ children }) => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+            <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-xs text-slate-400 font-mono tracking-wider uppercase">Loading Prism Session...</span>
+                    <div className="w-7 h-7 border-2 border-[#4F46E5] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-medium text-[#64748B]">Loading workspace...</span>
                 </div>
             </div>
         );

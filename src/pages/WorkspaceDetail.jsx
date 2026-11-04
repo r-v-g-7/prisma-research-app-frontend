@@ -18,7 +18,6 @@ import {
     addWorkspaceReference
 } from "@/services/workspace";
 import {
-    Layers,
     Lock,
     Globe,
     FileText,
@@ -27,7 +26,6 @@ import {
     AlertCircle,
     XCircle,
     Plus,
-    Share2,
     Copy,
     Edit3,
     BookOpen,
@@ -36,12 +34,10 @@ import {
     StickyNote,
     Users,
     ExternalLink,
-    ShieldCheck,
     ArrowLeft,
     Check,
     Target,
     HelpCircle,
-    Send,
     UserPlus,
     MessageSquare,
     Video,
@@ -49,33 +45,37 @@ import {
     LogOut,
     HardDrive,
     Download,
-    Library
+    Library,
+    Search,
+    X
 } from "lucide-react";
 import WorkspaceMeetings from "@/components/workspace/WorkspaceMeetings";
 import WorkspaceFiles from "@/components/workspace/WorkspaceFiles";
 import WorkspaceChat from "@/components/workspace/WorkspaceChat";
 import ZoteroImportModal from "@/components/workspace/ZoteroImportModal";
 import { exportWorkspaceBibliography } from "@/services/discovery";
+import { getSocket } from "@/services/socket";
+import { listWorkspaceMeetings } from "@/services/meetings";
 
 const STATUS_CONFIG = {
     hypothesis: {
-        label: "Hypothesis (Unverified)",
-        badge: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+        label: "Hypothesis",
+        badge: "bg-amber-50 text-[#D97706] border-amber-200",
         icon: HelpCircle
     },
     under_review: {
-        label: "Under Review / Replicating",
-        badge: "bg-indigo-500/10 text-indigo-300 border-indigo-500/30",
+        label: "Under Review",
+        badge: "bg-[#EEF2FF] text-[#4F46E5] border-indigo-200",
         icon: Clock
     },
     verified: {
-        label: "Verified Finding",
-        badge: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
+        label: "Verified",
+        badge: "bg-emerald-50 text-[#15803D] border-emerald-200",
         icon: CheckCircle2
     },
     refuted: {
-        label: "Refuted / Inconclusive",
-        badge: "bg-rose-500/10 text-rose-300 border-rose-500/30",
+        label: "Refuted",
+        badge: "bg-red-50 text-[#DC2626] border-red-200",
         icon: XCircle
     }
 };
@@ -89,32 +89,9 @@ const WorkspaceDetail = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("chat");
     const [showCopySuccess, setShowCopySuccess] = useState(false);
-
-    const handleChatConvertToTask = async (text) => {
-        try {
-            await addWorkspaceTask(id, { title: text.slice(0, 100) });
-            await loadWorkspace();
-            alert("Added task to workspace milestones!");
-        } catch (err) {
-            alert(err.message || "Failed to create task");
-        }
-    };
-
-    const handleChatConvertToDecision = async (text) => {
-        try {
-            await addWorkspaceDecision(id, {
-                title: text.slice(0, 60),
-                rationale: text,
-                alternatives: ""
-            });
-            await loadWorkspace();
-            alert("Logged decision in workspace decision log!");
-        } catch (err) {
-            alert(err.message || "Failed to log decision");
-        }
-    };
     const [processing, setProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [hasLiveMeeting, setHasLiveMeeting] = useState(false);
 
     // Research Brief State
     const [isEditingBrief, setIsEditingBrief] = useState(false);
@@ -150,18 +127,6 @@ const WorkspaceDetail = () => {
     const [refSubmitting, setRefSubmitting] = useState(false);
     const [exportingBib, setExportingBib] = useState(false);
 
-    const handleExportBibliography = async (format = "bibtex") => {
-        if (!workspace?._id) return;
-        setExportingBib(true);
-        try {
-            await exportWorkspaceBibliography(workspace._id, format, `${workspace.title.replace(/[^a-zA-Z0-9]/g, "_")}_references`);
-        } catch (err) {
-            alert(err.message || "Failed to export bibliography");
-        } finally {
-            setExportingBib(false);
-        }
-    };
-
     // Invite State
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteSuccess, setInviteSuccess] = useState("");
@@ -196,13 +161,96 @@ const WorkspaceDetail = () => {
         }
     };
 
+    const checkLiveMeetings = async () => {
+        if (!id) return;
+        try {
+            const res = await listWorkspaceMeetings(id);
+            if (res.success && Array.isArray(res.data)) {
+                setHasLiveMeeting(res.data.some((m) => m.status === "in_progress"));
+            }
+        } catch (_) {}
+    };
+
     useEffect(() => {
         loadWorkspace();
+        checkLiveMeetings();
+        if (!id) return;
+        const socket = getSocket();
+        const joinRoom = () => {
+            socket.emit("join_workspace", { workspaceId: id });
+        };
+        if (socket.connected) {
+            joinRoom();
+        }
+        socket.on("connect", joinRoom);
+
+        const handleRealtimeRefresh = () => {
+            loadWorkspace();
+        };
+
+        const handleMeetingUpdate = () => {
+            checkLiveMeetings();
+        };
+
+        socket.on("workspace_member_joined", handleRealtimeRefresh);
+        socket.on("workspace_meeting_created", handleMeetingUpdate);
+        socket.on("workspace_meeting_updated", handleMeetingUpdate);
+
+        return () => {
+            if (socket.connected) {
+                socket.emit("leave_workspace", { workspaceId: id });
+            }
+            socket.off("connect", joinRoom);
+            socket.off("workspace_member_joined", handleRealtimeRefresh);
+            socket.off("workspace_meeting_created", handleMeetingUpdate);
+            socket.off("workspace_meeting_updated", handleMeetingUpdate);
+        };
     }, [id]);
+
+    const handleChatConvertToTask = async (text) => {
+        try {
+            await addWorkspaceTask(id, { title: text.slice(0, 100) });
+            await loadWorkspace();
+            alert("Added milestone to workspace.");
+        } catch (err) {
+            alert(err.message || "Failed to create task");
+        }
+    };
+
+    const handleChatConvertToDecision = async (text) => {
+        try {
+            await addWorkspaceDecision(id, {
+                title: text.slice(0, 60),
+                rationale: text,
+                alternatives: ""
+            });
+            await loadWorkspace();
+            alert("Logged decision in workspace decision log.");
+        } catch (err) {
+            alert(err.message || "Failed to log decision");
+        }
+    };
+
+    const handleExportBibliography = async (format = "bibtex") => {
+        if (!workspace?._id) return;
+        setExportingBib(true);
+        try {
+            await exportWorkspaceBibliography(
+                workspace._id,
+                format,
+                `${(workspace.title || "workspace").replace(/[^a-zA-Z0-9]/g, "_")}_references`
+            );
+        } catch (err) {
+            alert(err.message || "Failed to export bibliography");
+        } finally {
+            setExportingBib(false);
+        }
+    };
 
     const currentUserId = (user?._id || user?.id)?.toString();
     const isCreator = (workspace?.creator?._id || workspace?.creator)?.toString() === currentUserId;
-    const isMember = isCreator || workspace?.members?.some(m => (m?._id || m)?.toString() === currentUserId);
+    const isMember =
+        isCreator || workspace?.members?.some((m) => (m?._id || m)?.toString() === currentUserId);
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText(window.location.href);
@@ -227,7 +275,7 @@ const WorkspaceDetail = () => {
         setProcessing(true);
         try {
             await leaveWorkspace(id);
-            navigate('/workspaces');
+            navigate("/workspaces");
         } catch (err) {
             setErrorMessage(err.message || "Failed to leave workspace");
             setProcessing(false);
@@ -237,7 +285,10 @@ const WorkspaceDetail = () => {
     const handleSaveBrief = async () => {
         setBriefSaving(true);
         try {
-            const objectives = objectivesText.split("\n").map(s => s.trim()).filter(Boolean);
+            const objectives = objectivesText
+                .split("\n")
+                .map((s) => s.trim())
+                .filter(Boolean);
             await updateWorkspaceBrief(id, {
                 problemStatement,
                 objectives,
@@ -340,7 +391,7 @@ const WorkspaceDetail = () => {
         setInviteSuccess("");
         try {
             await inviteMember(id, inviteEmail.trim());
-            setInviteSuccess("Collaborator invited successfully!");
+            setInviteSuccess("Collaborator invited.");
             setInviteEmail("");
             await loadWorkspace();
             setTimeout(() => setInviteSuccess(""), 3000);
@@ -398,39 +449,51 @@ const WorkspaceDetail = () => {
 
     if (loading) {
         return (
-            <div className="bg-white border border-slate-200 rounded-xl p-12 text-center shadow-2xs">
-                <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-xs text-slate-500 font-mono">Loading Collaborative Research Lab...</p>
+            <div className="prism-card p-12 text-center">
+                <div className="w-7 h-7 border-2 border-[#4F46E5] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm text-[#64748B]">Loading research lab...</p>
             </div>
         );
     }
 
     if (!workspace) {
         return (
-            <div className="bg-white border border-slate-200 rounded-xl p-10 text-center max-w-md mx-auto space-y-4 shadow-2xs">
-                <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
-                    <Lock className="w-6 h-6" />
+            <div className="prism-card p-10 text-center max-w-md mx-auto space-y-4">
+                <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-[#D97706]">
+                    <Lock className="w-5 h-5" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900">Private Research Lab</h2>
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                        {errorMessage || "You must be invited by the research team to access this private repository."}
+                    <h2 className="text-base font-semibold text-[#172033]">Private Research Lab</h2>
+                    <p className="text-sm text-[#64748B] mt-1 leading-relaxed">
+                        {errorMessage ||
+                            "You must be invited by the research team to access this private workspace."}
                     </p>
                 </div>
-                <Button onClick={() => navigate('/workspaces')} className="bg-indigo-600 hover:bg-indigo-700 text-xs text-white">
-                    Back to Workspaces
-                </Button>
+                <Button onClick={() => navigate("/workspaces")}>Back to Research Labs</Button>
             </div>
         );
     }
 
+    const tabs = [
+        { id: "chat", label: "Chat", icon: MessageSquare, count: null },
+        { id: "meetings", label: "Meetings", icon: Video, count: null, isLive: hasLiveMeeting },
+        { id: "brief", label: "Brief", icon: FileText, count: null },
+        { id: "evidence", label: "Evidence", icon: FlaskConical, count: workspace.evidence?.length || 0 },
+        { id: "decisions", label: "Decisions", icon: Scale, count: workspace.decisions?.length || 0 },
+        { id: "tasks", label: "Milestones", icon: ListTodo, count: workspace.tasks?.length || 0 },
+        { id: "notes", label: "Notes", icon: StickyNote, count: workspace.notes?.length || 0 },
+        { id: "files", label: "Files", icon: HardDrive, count: null },
+        { id: "references", label: "References", icon: BookOpen, count: workspace.references?.length || 0 },
+        { id: "members", label: "Team", icon: Users, count: workspace.members?.length || 0 }
+    ];
+
     return (
-        <div className="space-y-6 pb-20">
+        <div className="space-y-5 pb-16">
             {/* Top Navigation */}
-            <div className="flex items-center justify-between">
+            <div>
                 <button
-                    onClick={() => navigate('/workspaces')}
-                    className="inline-flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition"
+                    onClick={() => navigate("/workspaces")}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[#64748B] hover:text-[#172033] transition"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Research Labs</span>
@@ -438,42 +501,62 @@ const WorkspaceDetail = () => {
             </div>
 
             {errorMessage && (
-                <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex justify-between items-center">
-                    <span>{errorMessage}</span>
-                    <button onClick={() => setErrorMessage("")} className="font-bold text-sm">✕</button>
+                <div className="p-3.5 bg-red-50 border border-red-200 text-[#DC2626] text-xs rounded-lg flex justify-between items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{errorMessage}</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setErrorMessage("")}
+                        className="p-1 text-[#DC2626] hover:bg-red-100 rounded"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                    </button>
                 </div>
             )}
 
-            {/* Workspace Header Command Center */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+            {/* Workspace Header Card */}
+            <div className="prism-card p-5 sm:p-6 space-y-4">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div className="space-y-2.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{workspace.title || workspace.name}</h1>
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border ${
-                                workspace.privacy === 'public'
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                    : 'bg-amber-50 text-amber-700 border-amber-200'
-                            }`}>
-                                {workspace.privacy === 'public' ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                                <span className="capitalize">{workspace.privacy} Lab</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h1 className="text-xl font-semibold text-[#172033] tracking-tight">
+                                {workspace.title || workspace.name}
+                            </h1>
+                            <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                                    workspace.privacy === "public"
+                                        ? "bg-emerald-50 text-[#15803D] border-emerald-200"
+                                        : "bg-amber-50 text-[#D97706] border-amber-200"
+                                }`}
+                            >
+                                {workspace.privacy === "public" ? (
+                                    <Globe className="w-3 h-3" />
+                                ) : (
+                                    <Lock className="w-3 h-3" />
+                                )}
+                                <span className="capitalize">{workspace.privacy}</span>
                             </span>
-                            <span className="text-[11px] font-mono px-2 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200 capitalize">
-                                {workspace.type || "Research Project"}
+                            <span className="text-xs px-2 py-0.5 bg-[#F8FAFC] text-[#64748B] rounded-md border border-[#E2E8F0] capitalize">
+                                {workspace.type || "research"}
                             </span>
                         </div>
 
-                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
+                        <p className="text-sm text-[#64748B] leading-relaxed max-w-3xl">
                             {workspace.description}
                         </p>
 
                         {/* Originating Seed Discussion Bridge */}
                         {workspace.post && (
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-700 font-medium">
-                                <FileText className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                                <span className="text-slate-500">Originating Seed:</span>
-                                <Link to={`/post/${workspace.post._id || workspace.post}`} className="font-semibold underline hover:text-indigo-900 truncate max-w-md">
-                                    {workspace.post.title || "View Original Discussion"}
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#EEF2FF] border border-indigo-200/80 rounded-lg text-xs text-[#4F46E5] font-medium max-w-full">
+                                <FileText className="w-3.5 h-3.5 shrink-0" />
+                                <span className="text-[#64748B] shrink-0">Origin discussion:</span>
+                                <Link
+                                    to={`/post/${workspace.post._id || workspace.post}`}
+                                    className="font-semibold hover:underline truncate max-w-md"
+                                >
+                                    {workspace.post.title || "View Discussion"}
                                 </Link>
                             </div>
                         )}
@@ -481,7 +564,10 @@ const WorkspaceDetail = () => {
                         {workspace.tags && workspace.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 pt-0.5">
                                 {workspace.tags.map((tag, i) => (
-                                    <span key={i} className="text-[11px] font-mono px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md border border-slate-200">
+                                    <span
+                                        key={i}
+                                        className="text-xs px-2 py-0.5 bg-[#F8FAFC] text-[#64748B] rounded-md border border-[#E2E8F0]"
+                                    >
                                         #{tag}
                                     </span>
                                 ))}
@@ -491,29 +577,35 @@ const WorkspaceDetail = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                        <Button onClick={handleCopyLink} variant="outline" className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8.5 shadow-2xs">
+                        <Button onClick={handleCopyLink} variant="outline" size="sm">
                             {showCopySuccess ? (
                                 <>
-                                    <Check className="w-3.5 h-3.5 text-emerald-600 mr-1" />
-                                    <span>Copied Link</span>
+                                    <Check className="w-3.5 h-3.5 text-[#15803D]" />
+                                    <span>Copied</span>
                                 </>
                             ) : (
                                 <>
-                                    <Copy className="w-3.5 h-3.5 mr-1 text-slate-400" />
-                                    <span>Copy Lab Link</span>
+                                    <Copy className="w-3.5 h-3.5 text-[#64748B]" />
+                                    <span>Copy Link</span>
                                 </>
                             )}
                         </Button>
 
-                        {!isMember && workspace.privacy === 'public' && (
-                            <Button onClick={handleJoin} disabled={processing} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8.5 shadow-2xs font-medium">
-                                {processing ? "Joining..." : "Join Research Team"}
+                        {!isMember && workspace.privacy === "public" && (
+                            <Button onClick={handleJoin} disabled={processing} size="sm">
+                                {processing ? "Joining..." : "Join Research Lab"}
                             </Button>
                         )}
 
                         {isMember && !isCreator && (
-                            <Button onClick={handleLeave} disabled={processing} variant="outline" className="text-xs h-8.5 text-red-600 hover:bg-red-50 border-red-200">
-                                <LogOut className="w-3.5 h-3.5 mr-1" />
+                            <Button
+                                onClick={handleLeave}
+                                disabled={processing}
+                                variant="outline"
+                                size="sm"
+                                className="text-[#DC2626] hover:bg-red-50 border-red-200"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
                                 <span>Leave Lab</span>
                             </Button>
                         )}
@@ -521,801 +613,993 @@ const WorkspaceDetail = () => {
                 </div>
 
                 {/* Metadata Row */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                        <span>Lead Principal Investigator:</span>
-                        <Link to={`/profile/${workspace.creator?._id}`} className="font-bold text-slate-900 hover:text-indigo-600 transition">
+                <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between text-xs text-[#64748B] flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5">
+                        <span>Lead Researcher:</span>
+                        <Link
+                            to={`/profile/${workspace.creator?._id}`}
+                            className="font-semibold text-[#172033] hover:text-[#4F46E5] transition"
+                        >
                             {workspace.creator?.name || "Academic Lead"}
                         </Link>
                     </div>
-                    <div className="flex items-center gap-4 font-mono text-[11px]">
-                        <span>{workspace.members?.length || 1} Collaborators</span>
+                    <div className="flex items-center gap-3">
+                        <span>{workspace.members?.length || 1} collaborators</span>
+                        <span>·</span>
                         <span>Created {new Date(workspace.createdAt).toLocaleDateString()}</span>
                     </div>
                 </div>
             </div>
 
-            {/* Research Lab Navigation Tabs */}
-            <div className="flex border-b border-slate-200 overflow-x-auto gap-1 bg-white px-3 pt-2 rounded-t-xl border-x">
-                {[
-                    { id: "chat", label: "# lab-chat", icon: MessageSquare, count: null },
-                    { id: "meetings", label: "Video Sync", icon: Video, count: null },
-                    { id: "brief", label: "Research Brief", icon: FileText, count: null },
-                    { id: "evidence", label: "Evidence Board", icon: FlaskConical, count: workspace.evidence?.length || 0 },
-                    { id: "decisions", label: "Decision Log", icon: Scale, count: workspace.decisions?.length || 0 },
-                    { id: "tasks", label: "Milestones", icon: ListTodo, count: workspace.tasks?.length || 0 },
-                    { id: "files", label: "Files & Drive", icon: HardDrive, count: null },
-                    { id: "references", label: "References", icon: BookOpen, count: workspace.references?.length || 0 },
-                    { id: "members", label: "Team", icon: Users, count: workspace.members?.length || 0 }
-                ].map(tab => {
-                    const Icon = tab.icon;
-                    const isActive = activeTab === tab.id;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`px-3.5 py-2.5 text-xs font-medium border-b-2 whitespace-nowrap transition -mb-px flex items-center gap-1.5 ${
-                                isActive
-                                    ? "border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50"
-                                    : "border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-                            }`}
-                        >
-                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
-                            <span>{tab.label}</span>
-                            {tab.count !== null && (
-                                <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded-full border border-slate-200">
-                                    {tab.count}
-                                </span>
-                            )}
-                        </button>
-                    );
-                })}
-            </div>
+            {/* Unified Tab Bar + Content Card */}
+            <div className="prism-card overflow-hidden">
+                {/* Navigation Tabs */}
+                <div className="flex border-b border-[#E2E8F0] overflow-x-auto bg-[#F8FAFC] px-3 pt-1.5 gap-1">
+                    {tabs.map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`px-3 py-2 text-xs font-medium border-b-2 whitespace-nowrap transition -mb-px inline-flex items-center gap-1.5 rounded-t-lg ${
+                                    isActive
+                                        ? "border-[#4F46E5] text-[#4F46E5] bg-white font-semibold"
+                                        : "border-transparent text-[#64748B] hover:text-[#172033] hover:bg-white/60"
+                                }`}
+                            >
+                                <span>{tab.label}</span>
+                                {tab.isLive && (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#15803D] bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full shrink-0">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#15803D] animate-pulse" />
+                                        LIVE
+                                    </span>
+                                )}
+                                {tab.count !== null && (
+                                    <span
+                                        className={`text-[11px] px-1.5 py-0.5 rounded-full border leading-none ${
+                                            isActive
+                                                ? "bg-[#EEF2FF] text-[#4F46E5] border-indigo-200"
+                                                : "bg-white text-[#64748B] border-[#E2E8F0]"
+                                        }`}
+                                    >
+                                        {tab.count}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
 
-            {/* TAB CONTENT */}
-            <div className="bg-white border border-slate-200 rounded-b-xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                {/* TAB 0: REAL-TIME DISCORD-STYLE LAB CHAT */}
-                {activeTab === "chat" && (
-                    <WorkspaceChat
-                        workspaceId={workspace._id}
-                        currentUser={user}
-                        onConvertToTask={handleChatConvertToTask}
-                        onConvertToDecision={handleChatConvertToDecision}
-                    />
-                )}
-                {/* TAB 1: RESEARCH BRIEF */}
-                {activeTab === "brief" && (
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center pb-4 border-b border-slate-200">
-                            <div>
-                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Structured Research Brief</h2>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Defines the scientific problem, testable hypotheses, and planned deliverables.
-                                </p>
-                            </div>
-                            {isMember && !isEditingBrief && (
-                                <Button
-                                    onClick={() => setIsEditingBrief(true)}
-                                    variant="outline"
-                                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8 flex items-center gap-1.5"
-                                >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                    <span>Edit Brief</span>
-                                </Button>
-                            )}
-                        </div>
+                {/* Tab Content */}
+                <div className="p-5 sm:p-6">
+                    {/* TAB: CHAT */}
+                    {activeTab === "chat" && (
+                        <WorkspaceChat
+                            workspaceId={workspace._id}
+                            currentUser={user}
+                            onConvertToTask={handleChatConvertToTask}
+                            onConvertToDecision={handleChatConvertToDecision}
+                        />
+                    )}
 
-                        {!isEditingBrief ? (
-                            <div className="space-y-6">
+                    {/* TAB: MEETINGS */}
+                    {activeTab === "meetings" && (
+                        <WorkspaceMeetings
+                            workspaceId={workspace._id}
+                            isMember={isMember || isCreator}
+                            workspaceBrief={workspace.brief}
+                        />
+                    )}
+
+                    {/* TAB: RESEARCH BRIEF */}
+                    {activeTab === "brief" && (
+                        <div className="space-y-5">
+                            <div className="flex justify-between items-center pb-4 border-b border-[#E2E8F0] gap-3">
                                 <div>
-                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
-                                        Problem Statement & Context
-                                    </h3>
-                                    <div className="bg-slate-50/70 rounded-xl p-4 border border-slate-200">
-                                        <p className="text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
-                                            {workspace.brief?.problemStatement || "No problem statement recorded yet. Define the inquiry context."}
-                                        </p>
-                                    </div>
+                                    <h2 className="text-base font-semibold text-[#172033]">
+                                        Structured Research Brief
+                                    </h2>
+                                    <p className="text-xs text-[#64748B] mt-0.5">
+                                        Defines the scientific problem, testable hypotheses, and target deliverables.
+                                    </p>
                                 </div>
-
-                                <div>
-                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
-                                        Core Objectives & Hypotheses
-                                    </h3>
-                                    {(!workspace.brief?.objectives || workspace.brief.objectives.length === 0) ? (
-                                        <p className="text-xs text-slate-400 italic">No specific objectives defined yet.</p>
-                                    ) : (
-                                        <ul className="space-y-2">
-                                            {workspace.brief.objectives.map((obj, i) => (
-                                                <li key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                                                    <Target className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-                                                    <span>{obj}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-slate-50/70 rounded-xl p-4 border border-slate-200">
-                                        <h3 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
-                                            Methodology & Apparatus
-                                        </h3>
-                                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                            {workspace.brief?.methodology || "Not documented yet. Detail analytical, experimental, or computational procedures."}
-                                        </p>
-                                    </div>
-
-                                    <div className="bg-slate-50/70 rounded-xl p-4 border border-slate-200">
-                                        <h3 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
-                                            Target Deliverables & Outputs
-                                        </h3>
-                                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                            {workspace.brief?.expectedOutputs || "e.g. Conference submission, open-source repository, benchmark dataset."}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-mono text-slate-600 uppercase mb-1">
-                                        Problem Statement & Context
-                                    </label>
-                                    <textarea
-                                        rows={4}
-                                        value={problemStatement}
-                                        onChange={(e) => setProblemStatement(e.target.value)}
-                                        className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:border-indigo-500 outline-none"
-                                        placeholder="Formulate the core research challenge..."
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-mono text-slate-600 uppercase mb-1">
-                                        Objectives (one per line)
-                                    </label>
-                                    <textarea
-                                        rows={3}
-                                        value={objectivesText}
-                                        onChange={(e) => setObjectivesText(e.target.value)}
-                                        className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:border-indigo-500 outline-none"
-                                        placeholder="Hypothesis 1&#10;Hypothesis 2"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-mono text-slate-600 uppercase mb-1">Methodology</label>
-                                        <textarea
-                                            rows={3}
-                                            value={methodology}
-                                            onChange={(e) => setMethodology(e.target.value)}
-                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:border-indigo-500 outline-none"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-mono text-slate-600 uppercase mb-1">Expected Outputs</label>
-                                        <textarea
-                                            rows={3}
-                                            value={expectedOutputs}
-                                            onChange={(e) => setExpectedOutputs(e.target.value)}
-                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:border-indigo-500 outline-none"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                                {isMember && !isEditingBrief && (
                                     <Button
-                                        type="button"
+                                        onClick={() => setIsEditingBrief(true)}
                                         variant="outline"
-                                        onClick={() => setIsEditingBrief(false)}
-                                        className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8"
+                                        size="sm"
                                     >
-                                        Cancel
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                        <span>Edit Brief</span>
                                     </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={handleSaveBrief}
-                                        disabled={briefSaving}
-                                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 px-4"
-                                    >
-                                        {briefSaving ? "Saving..." : "Save Research Brief"}
-                                    </Button>
-                                </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                )}
 
-                {/* TAB 2: EVIDENCE BOARD */}
-                {activeTab === "evidence" && (
-                    <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-                            <div>
-                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Empirical Evidence Board</h2>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Track verified observations, benchmark data, and replications backing this lab.
-                                </p>
-                            </div>
-                            {isMember && (
-                                <Button
-                                    onClick={() => setShowEvidenceForm(!showEvidenceForm)}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 flex items-center gap-1.5"
-                                >
-                                    <Plus className="w-3.5 h-3.5" />
-                                    <span>{showEvidenceForm ? "Cancel" : "Add Evidence Claim"}</span>
-                                </Button>
+                            {!isEditingBrief ? (
+                                <div className="space-y-5">
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-[#172033] mb-1.5">
+                                            Problem Statement & Context
+                                        </h3>
+                                        <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
+                                            <p className="text-sm text-[#172033] leading-relaxed whitespace-pre-wrap">
+                                                {workspace.brief?.problemStatement ||
+                                                    "No problem statement recorded yet. Click Edit Brief to define the inquiry context."}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-[#172033] mb-1.5">
+                                            Core Objectives & Hypotheses
+                                        </h3>
+                                        {!workspace.brief?.objectives ||
+                                        workspace.brief.objectives.length === 0 ? (
+                                            <p className="text-xs text-[#64748B] italic">
+                                                No specific objectives defined yet.
+                                            </p>
+                                        ) : (
+                                            <ul className="space-y-2">
+                                                {workspace.brief.objectives.map((obj, i) => (
+                                                    <li
+                                                        key={i}
+                                                        className="flex items-start gap-2.5 text-sm text-[#172033] bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0]"
+                                                    >
+                                                        <Target className="w-4 h-4 text-[#4F46E5] shrink-0 mt-0.5" />
+                                                        <span>{obj}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
+                                            <h3 className="text-xs font-semibold text-[#172033] mb-1.5">
+                                                Methodology & Apparatus
+                                            </h3>
+                                            <p className="text-sm text-[#64748B] leading-relaxed whitespace-pre-wrap">
+                                                {workspace.brief?.methodology ||
+                                                    "Not documented yet. Detail analytical, experimental, or computational procedures."}
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
+                                            <h3 className="text-xs font-semibold text-[#172033] mb-1.5">
+                                                Target Deliverables & Outputs
+                                            </h3>
+                                            <p className="text-sm text-[#64748B] leading-relaxed whitespace-pre-wrap">
+                                                {workspace.brief?.expectedOutputs ||
+                                                    "e.g. Conference submission, open-source repository, benchmark dataset."}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="prism-label">Problem Statement & Context</label>
+                                        <textarea
+                                            rows={4}
+                                            value={problemStatement}
+                                            onChange={(e) => setProblemStatement(e.target.value)}
+                                            className="prism-textarea"
+                                            placeholder="Formulate the core research challenge..."
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="prism-label">Objectives (one per line)</label>
+                                        <textarea
+                                            rows={3}
+                                            value={objectivesText}
+                                            onChange={(e) => setObjectivesText(e.target.value)}
+                                            className="prism-textarea"
+                                            placeholder={"Hypothesis 1\nHypothesis 2"}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="prism-label">Methodology</label>
+                                            <textarea
+                                                rows={3}
+                                                value={methodology}
+                                                onChange={(e) => setMethodology(e.target.value)}
+                                                className="prism-textarea"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="prism-label">Expected Outputs</label>
+                                            <textarea
+                                                rows={3}
+                                                value={expectedOutputs}
+                                                onChange={(e) => setExpectedOutputs(e.target.value)}
+                                                className="prism-textarea"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setIsEditingBrief(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            onClick={handleSaveBrief}
+                                            disabled={briefSaving}
+                                        >
+                                            {briefSaving ? "Saving..." : "Save Brief"}
+                                        </Button>
+                                    </div>
+                                </div>
                             )}
                         </div>
+                    )}
 
-                        {showEvidenceForm && isMember && (
-                            <form onSubmit={handleAddEvidence} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3 shadow-2xs">
-                                <h3 className="text-xs sm:text-sm font-bold text-slate-900">Record Evidence or Research Observation</h3>
-                                <Input
-                                    placeholder="Claim or finding (e.g. Model inference speed scales linearly with KV-cache quantization)"
-                                    value={evidenceClaim}
-                                    onChange={(e) => setEvidenceClaim(e.target.value)}
-                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
-                                    required
-                                />
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <Input
-                                        placeholder="Supporting source / paper DOI / benchmark run"
-                                        value={evidenceSource}
-                                        onChange={(e) => setEvidenceSource(e.target.value)}
-                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
-                                    />
-                                    <select
-                                        value={evidenceStatus}
-                                        onChange={(e) => setEvidenceStatus(e.target.value)}
-                                        className="w-full p-2 bg-white border border-slate-200 text-slate-800 rounded-lg text-xs outline-none"
+                    {/* TAB: EVIDENCE BOARD */}
+                    {activeTab === "evidence" && (
+                        <div className="space-y-5">
+                            <div className="flex justify-between items-center pb-4 border-b border-[#E2E8F0] gap-3">
+                                <div>
+                                    <h2 className="text-base font-semibold text-[#172033]">
+                                        Empirical Evidence Board
+                                    </h2>
+                                    <p className="text-xs text-[#64748B] mt-0.5">
+                                        Track verified observations, benchmark data, and replications.
+                                    </p>
+                                </div>
+                                {isMember && (
+                                    <Button
+                                        onClick={() => setShowEvidenceForm(!showEvidenceForm)}
+                                        variant={showEvidenceForm ? "outline" : "default"}
+                                        size="sm"
                                     >
-                                        <option value="hypothesis">Hypothesis (Unverified)</option>
-                                        <option value="under_review">Under Review / Replicating</option>
-                                        <option value="verified">Verified Finding</option>
-                                        <option value="refuted">Refuted / Inconclusive</option>
-                                    </select>
-                                </div>
-                                <textarea
-                                    rows={2}
-                                    placeholder="Empirical notes or methodology validation details..."
-                                    value={evidenceNotes}
-                                    onChange={(e) => setEvidenceNotes(e.target.value)}
-                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 outline-none"
-                                />
-                                <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowEvidenceForm(false)} className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8">
-                                        Cancel
+                                        {showEvidenceForm ? (
+                                            <span>Cancel</span>
+                                        ) : (
+                                            <>
+                                                <Plus className="w-3.5 h-3.5" />
+                                                <span>Add Evidence</span>
+                                            </>
+                                        )}
                                     </Button>
-                                    <Button type="submit" disabled={evidenceSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8">
-                                        {evidenceSubmitting ? "Adding..." : "Log Evidence"}
-                                    </Button>
-                                </div>
-                            </form>
-                        )}
-
-                        {(!workspace.evidence || workspace.evidence.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
-                                <FlaskConical className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-slate-800">No evidence claims logged yet</p>
-                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                                    Pin claims, benchmark results, and citations to establish rigorous backing for your research.
-                                </p>
+                                )}
                             </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {workspace.evidence.map(ev => {
-                                    const config = STATUS_CONFIG[ev.status] || STATUS_CONFIG.hypothesis;
-                                    const StatusIcon = config.icon;
-                                    return (
-                                        <div key={ev._id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 shadow-2xs">
+
+                            {showEvidenceForm && isMember && (
+                                <form
+                                    onSubmit={handleAddEvidence}
+                                    className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-4 space-y-3"
+                                >
+                                    <h3 className="text-sm font-semibold text-[#172033]">
+                                        Record Evidence or Observation
+                                    </h3>
+                                    <div>
+                                        <label className="prism-label">Claim or Finding</label>
+                                        <Input
+                                            placeholder="e.g. Inference speed scales linearly with 4-bit KV-cache quantization"
+                                            value={evidenceClaim}
+                                            onChange={(e) => setEvidenceClaim(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="prism-label">Supporting Source / DOI</label>
+                                            <Input
+                                                placeholder="Paper DOI, dataset, or benchmark run"
+                                                value={evidenceSource}
+                                                onChange={(e) => setEvidenceSource(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="prism-label">Verification Status</label>
+                                            <select
+                                                value={evidenceStatus}
+                                                onChange={(e) => setEvidenceStatus(e.target.value)}
+                                                className="h-9 w-full px-3 bg-white border border-[#E2E8F0] text-[#172033] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5]"
+                                            >
+                                                <option value="hypothesis">Hypothesis (Unverified)</option>
+                                                <option value="under_review">Under Review / Replicating</option>
+                                                <option value="verified">Verified Finding</option>
+                                                <option value="refuted">Refuted / Inconclusive</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="prism-label">Notes</label>
+                                        <textarea
+                                            rows={2}
+                                            placeholder="Empirical notes or validation details..."
+                                            value={evidenceNotes}
+                                            onChange={(e) => setEvidenceNotes(e.target.value)}
+                                            className="prism-textarea"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowEvidenceForm(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button type="submit" size="sm" disabled={evidenceSubmitting}>
+                                            {evidenceSubmitting ? "Saving..." : "Log Evidence"}
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {!workspace.evidence || workspace.evidence.length === 0 ? (
+                                <div className="text-center py-12 bg-[#F8FAFC] rounded-xl border border-dashed border-[#E2E8F0] p-8">
+                                    <FlaskConical className="w-7 h-7 text-[#64748B] mx-auto mb-2" />
+                                    <p className="text-sm font-semibold text-[#172033]">
+                                        No evidence claims logged yet
+                                    </p>
+                                    <p className="text-xs text-[#64748B] max-w-sm mx-auto mt-1">
+                                        Pin claims, benchmark results, and citations to establish rigorous backing for your research.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {workspace.evidence.map((ev) => {
+                                        const config = STATUS_CONFIG[ev.status] || STATUS_CONFIG.hypothesis;
+                                        const StatusIcon = config.icon;
+                                        return (
+                                            <div
+                                                key={ev._id}
+                                                className="bg-white rounded-xl border border-[#E2E8F0] p-4 space-y-3"
+                                            >
+                                                <div className="flex justify-between items-start gap-2.5">
+                                                    <p className="text-sm font-semibold text-[#172033] leading-snug">
+                                                        {ev.claim}
+                                                    </p>
+                                                    <span
+                                                        className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border shrink-0 ${config.badge}`}
+                                                    >
+                                                        <StatusIcon className="w-3 h-3" />
+                                                        <span>{config.label}</span>
+                                                    </span>
+                                                </div>
+
+                                                {ev.source && (
+                                                    <p className="text-xs text-[#4F46E5] bg-[#EEF2FF]/70 px-2.5 py-1.5 rounded-lg border border-indigo-100 font-mono break-all">
+                                                        Source: {ev.source}
+                                                    </p>
+                                                )}
+
+                                                {ev.notes && (
+                                                    <p className="text-xs text-[#64748B] leading-relaxed">
+                                                        {ev.notes}
+                                                    </p>
+                                                )}
+
+                                                <div className="pt-2.5 border-t border-[#E2E8F0] flex justify-between items-center text-xs text-[#64748B]">
+                                                    <span>Added by {ev.addedBy?.name || "Member"}</span>
+                                                    {isMember && (
+                                                        <select
+                                                            value={ev.status}
+                                                            onChange={(e) =>
+                                                                handleUpdateEvidenceStatus(ev._id, e.target.value)
+                                                            }
+                                                            className="text-xs bg-[#F8FAFC] border border-[#E2E8F0] rounded-md px-2 py-1 text-[#172033] cursor-pointer focus:outline-none focus:border-[#4F46E5]"
+                                                        >
+                                                            <option value="hypothesis">Hypothesis</option>
+                                                            <option value="under_review">Under Review</option>
+                                                            <option value="verified">Verified</option>
+                                                            <option value="refuted">Refuted</option>
+                                                        </select>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* TAB: DECISION LOG */}
+                    {activeTab === "decisions" && (
+                        <div className="space-y-5">
+                            <div className="flex justify-between items-center pb-4 border-b border-[#E2E8F0] gap-3">
+                                <div>
+                                    <h2 className="text-base font-semibold text-[#172033]">
+                                        Research Decision Log
+                                    </h2>
+                                    <p className="text-xs text-[#64748B] mt-0.5">
+                                        Preserves methodological rationale, rejected alternatives, and team consensus.
+                                    </p>
+                                </div>
+                                {isMember && (
+                                    <Button
+                                        onClick={() => setShowDecisionForm(!showDecisionForm)}
+                                        variant={showDecisionForm ? "outline" : "default"}
+                                        size="sm"
+                                    >
+                                        {showDecisionForm ? (
+                                            <span>Cancel</span>
+                                        ) : (
+                                            <>
+                                                <Plus className="w-3.5 h-3.5" />
+                                                <span>Record Decision</span>
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
+
+                            {showDecisionForm && isMember && (
+                                <form
+                                    onSubmit={handleAddDecision}
+                                    className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-4 space-y-3"
+                                >
+                                    <h3 className="text-sm font-semibold text-[#172033]">
+                                        Record Research Decision
+                                    </h3>
+                                    <div>
+                                        <label className="prism-label">Decision Title</label>
+                                        <Input
+                                            placeholder="e.g. Adopt ternary weight representations for attention matrices"
+                                            value={decisionTitle}
+                                            onChange={(e) => setDecisionTitle(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="prism-label">Rationale & Justification</label>
+                                        <textarea
+                                            rows={3}
+                                            placeholder="Scientific or engineering justification..."
+                                            value={decisionRationale}
+                                            onChange={(e) => setDecisionRationale(e.target.value)}
+                                            className="prism-textarea"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="prism-label">Alternatives Considered</label>
+                                        <Input
+                                            placeholder="Options evaluated and discarded..."
+                                            value={decisionAlternatives}
+                                            onChange={(e) => setDecisionAlternatives(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowDecisionForm(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button type="submit" size="sm" disabled={decisionSubmitting}>
+                                            {decisionSubmitting ? "Saving..." : "Save Decision"}
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {!workspace.decisions || workspace.decisions.length === 0 ? (
+                                <div className="text-center py-12 bg-[#F8FAFC] rounded-xl border border-dashed border-[#E2E8F0] p-8">
+                                    <Scale className="w-7 h-7 text-[#64748B] mx-auto mb-2" />
+                                    <p className="text-sm font-semibold text-[#172033]">
+                                        No research decisions logged yet
+                                    </p>
+                                    <p className="text-xs text-[#64748B] max-w-sm mx-auto mt-1">
+                                        Track methodological choices and consensus so collaborators understand key decisions.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {workspace.decisions.map((dec) => (
+                                        <div
+                                            key={dec._id}
+                                            className="bg-white rounded-xl border border-[#E2E8F0] p-4 space-y-2"
+                                        >
                                             <div className="flex justify-between items-start gap-2">
-                                                <p className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{ev.claim}</p>
-                                                <span className={`inline-flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-0.5 rounded-full border shrink-0 ${config.badge}`}>
-                                                    <StatusIcon className="w-3 h-3" />
-                                                    <span>{config.label.split(' ')[0]}</span>
+                                                <h4 className="text-sm font-semibold text-[#172033]">
+                                                    {dec.title}
+                                                </h4>
+                                                <span className="text-xs text-[#64748B] shrink-0">
+                                                    {new Date(dec.createdAt).toLocaleDateString()}
                                                 </span>
                                             </div>
-
-                                            {ev.source && (
-                                                <p className="text-xs text-indigo-700 bg-indigo-50/60 p-2 rounded-lg border border-indigo-100 font-mono">
-                                                    Source: {ev.source}
+                                            <p className="text-sm text-[#64748B] leading-relaxed">
+                                                {dec.rationale}
+                                            </p>
+                                            {dec.alternatives && (
+                                                <p className="text-xs text-[#64748B] border-t border-[#E2E8F0] pt-2">
+                                                    <span className="font-medium text-[#172033]">
+                                                        Alternatives considered:
+                                                    </span>{" "}
+                                                    {dec.alternatives}
                                                 </p>
                                             )}
-
-                                            {ev.notes && (
-                                                <p className="text-xs text-slate-600 leading-relaxed">{ev.notes}</p>
-                                            )}
-
-                                            <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-500">
-                                                <span>Added by {ev.addedBy?.name || "Member"}</span>
-                                                {isMember && (
-                                                    <select
-                                                        value={ev.status}
-                                                        onChange={(e) => handleUpdateEvidenceStatus(ev._id, e.target.value)}
-                                                        className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-700 cursor-pointer"
-                                                    >
-                                                        <option value="hypothesis">Hypothesis</option>
-                                                        <option value="under_review">Under Review</option>
-                                                        <option value="verified">Verified</option>
-                                                        <option value="refuted">Refuted</option>
-                                                    </select>
-                                                )}
-                                            </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* TAB 3: DECISION LOG */}
-                {activeTab === "decisions" && (
-                    <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-                            <div>
-                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Architectural & Research Decisions</h2>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Preserves technical rationale, rejected alternatives, and consensus history.
-                                </p>
-                            </div>
-                            {isMember && (
-                                <Button
-                                    onClick={() => setShowDecisionForm(!showDecisionForm)}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 flex items-center gap-1.5"
-                                >
-                                    <Plus className="w-3.5 h-3.5" />
-                                    <span>{showDecisionForm ? "Cancel" : "Record Decision"}</span>
-                                </Button>
+                                    ))}
+                                </div>
                             )}
                         </div>
+                    )}
 
-                        {showDecisionForm && isMember && (
-                            <form onSubmit={handleAddDecision} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3 shadow-2xs">
-                                <h3 className="text-xs sm:text-sm font-bold text-slate-900">Record Research Decision</h3>
-                                <Input
-                                    placeholder="Decision Title (e.g. Adopt ternary weight representations for attention matrices)"
-                                    value={decisionTitle}
-                                    onChange={(e) => setDecisionTitle(e.target.value)}
-                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
-                                    required
-                                />
-                                <textarea
-                                    rows={3}
-                                    placeholder="Rationale & scientific justification..."
-                                    value={decisionRationale}
-                                    onChange={(e) => setDecisionRationale(e.target.value)}
-                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 outline-none"
-                                    required
-                                />
-                                <Input
-                                    placeholder="Alternatives evaluated and discarded..."
-                                    value={decisionAlternatives}
-                                    onChange={(e) => setDecisionAlternatives(e.target.value)}
-                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
-                                />
-                                <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowDecisionForm(false)} className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8">
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit" disabled={decisionSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8">
-                                        {decisionSubmitting ? "Recording..." : "Save Decision"}
-                                    </Button>
-                                </div>
-                            </form>
-                        )}
+                    {/* TAB: FILES */}
+                    {activeTab === "files" && (
+                        <WorkspaceFiles
+                            workspaceId={workspace._id}
+                            isMember={isMember || isCreator}
+                        />
+                    )}
 
-                        {(!workspace.decisions || workspace.decisions.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
-                                <Scale className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-slate-800">No research decisions logged yet</p>
-                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                                    Track methodological choices and consensus so team members know why specific approaches were taken.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {workspace.decisions.map(dec => (
-                                    <div key={dec._id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-2 shadow-2xs">
-                                        <div className="flex justify-between items-start">
-                                            <h4 className="text-xs sm:text-sm font-bold text-slate-900">{dec.title}</h4>
-                                            <span className="text-[10px] font-mono text-slate-500">
-                                                {new Date(dec.createdAt).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-slate-700 leading-relaxed">{dec.rationale}</p>
-                                        {dec.alternatives && (
-                                            <p className="text-xs text-slate-500 border-t border-slate-100 pt-2 font-mono text-[11px]">
-                                                Alternatives considered: {dec.alternatives}
-                                            </p>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* TAB: GOOGLE MEET RESEARCH ROOMS */}
-                {activeTab === "meetings" && (
-                    <WorkspaceMeetings
-                        workspaceId={workspace._id}
-                        isMember={isMember || isCreator}
-                        workspaceBrief={workspace.brief}
-                    />
-                )}
-
-                {/* TAB: HYBRID RESEARCH STORAGE & GOOGLE DRIVE */}
-                {activeTab === "files" && (
-                    <WorkspaceFiles
-                        workspaceId={workspace._id}
-                        isMember={isMember || isCreator}
-                    />
-                )}
-
-                {/* TAB 4: LITERATURE REFERENCES */}
-                {activeTab === "references" && (
-                    <div className="space-y-5">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-                            <div>
-                                <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                                    <BookOpen className="w-5 h-5 text-indigo-600" />
-                                    <span>Literature & Bibliography</span>
-                                </h2>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Connected academic publications, DOIs, OpenAlex papers, and synced Zotero references.
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <Link
-                                    to={`/discovery?workspaceId=${workspace._id}`}
-                                    className="bg-white border border-slate-200 hover:bg-slate-50 text-indigo-700 text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 transition shadow-2xs font-medium"
-                                >
-                                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                                    <span>Search OpenAlex</span>
-                                </Link>
-                                {isMember && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setShowZoteroModal(true)}
-                                        className="bg-white border-slate-200 hover:bg-slate-50 text-rose-700 text-xs h-8 px-3 flex items-center gap-1.5 font-medium"
-                                    >
-                                        <Library className="w-3.5 h-3.5 text-rose-600" />
-                                        <span>Sync Zotero</span>
-                                    </Button>
-                                )}
-                                {(workspace.references && workspace.references.length > 0) && (
-                                    <>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => handleExportBibliography("bibtex")}
-                                            disabled={exportingBib}
-                                            className="bg-white border-slate-200 hover:bg-slate-50 text-slate-700 text-xs h-8 px-2.5 flex items-center gap-1"
-                                            title="Export BibTeX (.bib) file"
-                                        >
-                                            <Download className="w-3 h-3 text-indigo-600" />
-                                            <span>.bib</span>
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => handleExportBibliography("ris")}
-                                            disabled={exportingBib}
-                                            className="bg-white border-slate-200 hover:bg-slate-50 text-slate-700 text-xs h-8 px-2.5 flex items-center gap-1"
-                                            title="Export RIS (.ris) file"
-                                        >
-                                            <Download className="w-3 h-3 text-purple-600" />
-                                            <span>.ris</span>
-                                        </Button>
-                                    </>
-                                )}
-                                {isMember && (
-                                    <Button
-                                        onClick={() => setShowRefForm(!showRefForm)}
-                                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 flex items-center gap-1.5"
-                                    >
-                                        <Plus className="w-3.5 h-3.5" />
-                                        <span>{showRefForm ? "Cancel" : "Add Reference"}</span>
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-
-                        {showRefForm && isMember && (
-                            <form onSubmit={handleAddReference} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3 shadow-2xs">
-                                <h3 className="text-xs sm:text-sm font-bold text-slate-900">Add Paper or Citation</h3>
-                                <Input
-                                    placeholder="Paper Title (e.g. Attention Is All You Need)"
-                                    value={refTitle}
-                                    onChange={(e) => setRefTitle(e.target.value)}
-                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
-                                    required
-                                />
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <Input
-                                        placeholder="Authors (e.g. Vaswani et al.)"
-                                        value={refAuthors}
-                                        onChange={(e) => setRefAuthors(e.target.value)}
-                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
-                                    />
-                                    <Input
-                                        placeholder="DOI (e.g. 10.48550/arXiv.1706.03762)"
-                                        value={refDoi}
-                                        onChange={(e) => setRefDoi(e.target.value)}
-                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm font-mono"
-                                    />
-                                    <Input
-                                        placeholder="URL / arXiv link"
-                                        value={refUrl}
-                                        onChange={(e) => setRefUrl(e.target.value)}
-                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm font-mono"
-                                    />
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowRefForm(false)} className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8">
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit" disabled={refSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8">
-                                        {refSubmitting ? "Adding..." : "Add to Library"}
-                                    </Button>
-                                </div>
-                            </form>
-                        )}
-
-                        {(!workspace.references || workspace.references.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
-                                <BookOpen className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-slate-800">No bibliography added yet</p>
-                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                                    Attach key papers, prior art, and reference materials for team literature review.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {workspace.references.map(ref => (
-                                    <div key={ref._id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-start justify-between gap-4 shadow-2xs">
-                                        <div>
-                                            <h4 className="text-xs sm:text-sm font-bold text-slate-900">{ref.title}</h4>
-                                            {ref.authors && <p className="text-xs text-slate-500 mt-0.5">{ref.authors}</p>}
-                                            {ref.doi && (
-                                                <span className="inline-block mt-2 font-mono text-[11px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                                                    DOI: {ref.doi}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {ref.url && (
-                                            <a
-                                                href={ref.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="shrink-0 text-indigo-600 hover:text-indigo-800 flex items-center gap-1 text-xs font-medium"
-                                            >
-                                                <span>Paper</span>
-                                                <ExternalLink className="w-3.5 h-3.5" />
-                                            </a>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* TAB 5: SCIENTIFIC NOTES */}
-                {activeTab === "notes" && (
-                    <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-                            <div>
-                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Scientific Lab Notes</h2>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Unstructured observations, experiment scratchpads, and meeting minutes.
-                                </p>
-                            </div>
-                            {isMember && (
-                                <Button
-                                    onClick={() => setShowNoteForm(!showNoteForm)}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 flex items-center gap-1.5"
-                                >
-                                    <Plus className="w-3.5 h-3.5" />
-                                    <span>{showNoteForm ? "Cancel" : "Add Note"}</span>
-                                </Button>
-                            )}
-                        </div>
-
-                        {showNoteForm && isMember && (
-                            <form onSubmit={handleAddNote} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3 shadow-2xs">
-                                <Input
-                                    placeholder="Note Title..."
-                                    value={noteTitle}
-                                    onChange={(e) => setNoteTitle(e.target.value)}
-                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
-                                    required
-                                />
-                                <textarea
-                                    rows={4}
-                                    placeholder="Write your research findings, formulas, or experiment logs..."
-                                    value={noteContent}
-                                    onChange={(e) => setNoteContent(e.target.value)}
-                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 outline-none"
-                                    required
-                                />
-                                <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowNoteForm(false)} className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8">
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit" disabled={noteSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8">
-                                        {noteSubmitting ? "Saving..." : "Save Note"}
-                                    </Button>
-                                </div>
-                            </form>
-                        )}
-
-                        {(!workspace.notes || workspace.notes.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
-                                <StickyNote className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-slate-800">No scientific notes yet</p>
-                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                                    Create notes to capture insights during team research meetings and experiment runs.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {workspace.notes.map(note => (
-                                    <div key={note._id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-2 shadow-2xs">
-                                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">{note.title}</h4>
-                                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{note.content}</p>
-                                        <span className="block text-[10px] font-mono text-slate-400 pt-2 border-t border-slate-100">
-                                            {new Date(note.createdAt).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* TAB 6: MILESTONES & TASKS */}
-                {activeTab === "tasks" && (
-                    <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-                            <div>
-                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Research Milestones & Deliverables</h2>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Execution checklist towards publication, peer review, and benchmark release.
-                                </p>
-                            </div>
-                        </div>
-
-                        {isMember && (
-                            <form onSubmit={handleAddTask} className="flex gap-2">
-                                <Input
-                                    placeholder="Add research milestone (e.g. Complete 4-bit attention matrix benchmarks on Cortex-M55)..."
-                                    value={taskTitle}
-                                    onChange={(e) => setTaskTitle(e.target.value)}
-                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
-                                    required
-                                />
-                                <Button type="submit" disabled={taskSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 shrink-0">
-                                    <Plus className="w-3.5 h-3.5 mr-1" />
-                                    <span>Add Milestone</span>
-                                </Button>
-                            </form>
-                        )}
-
-                        {(!workspace.tasks || workspace.tasks.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
-                                <ListTodo className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-slate-800">No milestones scheduled</p>
-                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                                    Break down the research project into verifiable milestones and assign responsibilities.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                {workspace.tasks.map(task => {
-                                    const isCompleted = task.status === "completed";
-                                    return (
-                                        <div
-                                            key={task._id}
-                                            onClick={() => isMember && handleToggleTask(task._id, task.status)}
-                                            className={`p-3 rounded-xl border transition flex items-center justify-between gap-3 shadow-2xs ${
-                                                isMember ? 'cursor-pointer hover:border-slate-300' : ''
-                                            } ${
-                                                isCompleted
-                                                    ? 'bg-slate-50/60 border-slate-200 text-slate-400 line-through'
-                                                    : 'bg-white border-slate-200 text-slate-800'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className={`w-5 h-5 rounded-md flex items-center justify-center border shrink-0 ${
-                                                    isCompleted
-                                                        ? 'bg-emerald-50 border-emerald-300 text-emerald-600'
-                                                        : 'border-slate-300 bg-white'
-                                                }`}>
-                                                    {isCompleted && <Check className="w-3.5 h-3.5" />}
-                                                </div>
-                                                <span className="text-xs sm:text-sm truncate">{task.title}</span>
-                                            </div>
-                                            <span className="text-[10px] font-mono uppercase text-slate-400">
-                                                {task.status}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* TAB 7: TEAM MEMBERS & INVITATIONS */}
-                {activeTab === "members" && (
-                    <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-                            <div>
-                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Collaborating Researchers ({workspace.members?.length || 0})</h2>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Verified scholars with full access to the evidence board and notes.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Invite Collaborator Form */}
-                        {isMember && (
-                            <form onSubmit={handleInvite} className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 shadow-2xs">
-                                <label className="block text-xs font-mono text-slate-600 uppercase">
-                                    Invite Academic Collaborator by Email
-                                </label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        type="email"
-                                        placeholder="researcher@university.edu"
-                                        value={inviteEmail}
-                                        onChange={(e) => setInviteEmail(e.target.value)}
-                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
-                                        required
-                                    />
-                                    <Button type="submit" disabled={inviteLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 shrink-0 flex items-center gap-1.5">
-                                        <UserPlus className="w-3.5 h-3.5" />
-                                        <span>{inviteLoading ? "Sending..." : "Send Invitation"}</span>
-                                    </Button>
-                                </div>
-                                {inviteSuccess && (
-                                    <p className="text-xs text-emerald-600 flex items-center gap-1">
-                                        <Check className="w-3.5 h-3.5" />
-                                        <span>{inviteSuccess}</span>
+                    {/* TAB: LITERATURE REFERENCES */}
+                    {activeTab === "references" && (
+                        <div className="space-y-5">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E2E8F0]">
+                                <div>
+                                    <h2 className="text-base font-semibold text-[#172033]">
+                                        Literature & Bibliography
+                                    </h2>
+                                    <p className="text-xs text-[#64748B] mt-0.5">
+                                        Academic publications, DOIs, OpenAlex papers, and synced Zotero references.
                                     </p>
-                                )}
-                            </form>
-                        )}
-
-                        {/* Members List */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {workspace.members?.map(member => (
-                                <div key={member._id} className="bg-white rounded-xl border border-slate-200 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs font-bold uppercase font-mono shrink-0">
-                                            {member.name?.charAt(0) || "U"}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-xs font-bold text-slate-900 truncate">{member.name}</p>
-                                            <p className="text-[10px] text-slate-500 truncate">{member.institution || member.role || "Scholar"}</p>
-                                        </div>
-                                    </div>
-                                    {(workspace.creator?._id || workspace.creator) === member._id && (
-                                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                            Lead
-                                        </span>
+                                </div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <Link
+                                        to={`/discovery?workspaceId=${workspace._id}`}
+                                        className="h-8 px-3 bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#172033] text-xs font-medium rounded-lg inline-flex items-center gap-1.5 transition"
+                                    >
+                                        <Search className="w-3.5 h-3.5 text-[#4F46E5]" />
+                                        <span>Search OpenAlex</span>
+                                    </Link>
+                                    {isMember && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowZoteroModal(true)}
+                                        >
+                                            <Library className="w-3.5 h-3.5 text-[#4F46E5]" />
+                                            <span>Sync Zotero</span>
+                                        </Button>
+                                    )}
+                                    {workspace.references && workspace.references.length > 0 && (
+                                        <>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleExportBibliography("bibtex")}
+                                                disabled={exportingBib}
+                                                title="Export BibTeX (.bib)"
+                                            >
+                                                <Download className="w-3.5 h-3.5 text-[#64748B]" />
+                                                <span>.bib</span>
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleExportBibliography("ris")}
+                                                disabled={exportingBib}
+                                                title="Export RIS (.ris)"
+                                            >
+                                                <Download className="w-3.5 h-3.5 text-[#64748B]" />
+                                                <span>.ris</span>
+                                            </Button>
+                                        </>
+                                    )}
+                                    {isMember && (
+                                        <Button
+                                            onClick={() => setShowRefForm(!showRefForm)}
+                                            variant={showRefForm ? "outline" : "default"}
+                                            size="sm"
+                                        >
+                                            {showRefForm ? (
+                                                <span>Cancel</span>
+                                            ) : (
+                                                <>
+                                                    <Plus className="w-3.5 h-3.5" />
+                                                    <span>Add Reference</span>
+                                                </>
+                                            )}
+                                        </Button>
                                     )}
                                 </div>
-                            ))}
+                            </div>
+
+                            {showRefForm && isMember && (
+                                <form
+                                    onSubmit={handleAddReference}
+                                    className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-4 space-y-3"
+                                >
+                                    <h3 className="text-sm font-semibold text-[#172033]">
+                                        Add Paper or Citation
+                                    </h3>
+                                    <div>
+                                        <label className="prism-label">Paper Title</label>
+                                        <Input
+                                            placeholder="e.g. Attention Is All You Need"
+                                            value={refTitle}
+                                            onChange={(e) => setRefTitle(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="prism-label">Authors</label>
+                                            <Input
+                                                placeholder="Vaswani et al."
+                                                value={refAuthors}
+                                                onChange={(e) => setRefAuthors(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="prism-label">DOI</label>
+                                            <Input
+                                                placeholder="10.48550/arXiv.1706.03762"
+                                                value={refDoi}
+                                                onChange={(e) => setRefDoi(e.target.value)}
+                                                className="font-mono text-xs"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="prism-label">Paper URL</label>
+                                            <Input
+                                                placeholder="https://arxiv.org/abs/..."
+                                                value={refUrl}
+                                                onChange={(e) => setRefUrl(e.target.value)}
+                                                className="font-mono text-xs"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowRefForm(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button type="submit" size="sm" disabled={refSubmitting}>
+                                            {refSubmitting ? "Adding..." : "Add Reference"}
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {!workspace.references || workspace.references.length === 0 ? (
+                                <div className="text-center py-12 bg-[#F8FAFC] rounded-xl border border-dashed border-[#E2E8F0] p-8">
+                                    <BookOpen className="w-7 h-7 text-[#64748B] mx-auto mb-2" />
+                                    <p className="text-sm font-semibold text-[#172033]">
+                                        No bibliography added yet
+                                    </p>
+                                    <p className="text-xs text-[#64748B] max-w-sm mx-auto mt-1">
+                                        Attach key papers, DOIs, or import citations from OpenAlex and Zotero.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2.5">
+                                    {workspace.references.map((ref) => (
+                                        <div
+                                            key={ref._id}
+                                            className="bg-white rounded-xl border border-[#E2E8F0] p-4 flex items-start justify-between gap-4"
+                                        >
+                                            <div className="min-w-0">
+                                                <h4 className="text-sm font-semibold text-[#172033]">
+                                                    {ref.title}
+                                                </h4>
+                                                {ref.authors && (
+                                                    <p className="text-xs text-[#64748B] mt-0.5">{ref.authors}</p>
+                                                )}
+                                                {ref.doi && (
+                                                    <span className="inline-block mt-2 font-mono text-[11px] text-[#4F46E5] bg-[#EEF2FF] px-2 py-0.5 rounded border border-indigo-200">
+                                                        DOI: {ref.doi}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {ref.url && (
+                                                <a
+                                                    href={ref.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="shrink-0 h-8 px-3 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#4F46E5] inline-flex items-center gap-1.5 text-xs font-medium transition"
+                                                >
+                                                    <span>Open</span>
+                                                    <ExternalLink className="w-3.5 h-3.5" />
+                                                </a>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    </div>
-                )}
+                    )}
+
+                    {/* TAB: SCIENTIFIC NOTES */}
+                    {activeTab === "notes" && (
+                        <div className="space-y-5">
+                            <div className="flex justify-between items-center pb-4 border-b border-[#E2E8F0] gap-3">
+                                <div>
+                                    <h2 className="text-base font-semibold text-[#172033]">
+                                        Scientific Lab Notes
+                                    </h2>
+                                    <p className="text-xs text-[#64748B] mt-0.5">
+                                        Shared observations, experiment logs, and scratchpads.
+                                    </p>
+                                </div>
+                                {isMember && (
+                                    <Button
+                                        onClick={() => setShowNoteForm(!showNoteForm)}
+                                        variant={showNoteForm ? "outline" : "default"}
+                                        size="sm"
+                                    >
+                                        {showNoteForm ? (
+                                            <span>Cancel</span>
+                                        ) : (
+                                            <>
+                                                <Plus className="w-3.5 h-3.5" />
+                                                <span>Add Note</span>
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
+
+                            {showNoteForm && isMember && (
+                                <form
+                                    onSubmit={handleAddNote}
+                                    className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-4 space-y-3"
+                                >
+                                    <div>
+                                        <label className="prism-label">Note Title</label>
+                                        <Input
+                                            placeholder="e.g. Cryostat Run #14 Observations"
+                                            value={noteTitle}
+                                            onChange={(e) => setNoteTitle(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="prism-label">Content</label>
+                                        <textarea
+                                            rows={4}
+                                            placeholder="Write your research findings, formulas, or experiment logs..."
+                                            value={noteContent}
+                                            onChange={(e) => setNoteContent(e.target.value)}
+                                            className="prism-textarea"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowNoteForm(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button type="submit" size="sm" disabled={noteSubmitting}>
+                                            {noteSubmitting ? "Saving..." : "Save Note"}
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {!workspace.notes || workspace.notes.length === 0 ? (
+                                <div className="text-center py-12 bg-[#F8FAFC] rounded-xl border border-dashed border-[#E2E8F0] p-8">
+                                    <StickyNote className="w-7 h-7 text-[#64748B] mx-auto mb-2" />
+                                    <p className="text-sm font-semibold text-[#172033]">
+                                        No lab notes recorded yet
+                                    </p>
+                                    <p className="text-xs text-[#64748B] max-w-sm mx-auto mt-1">
+                                        Create notes to capture insights during research sessions and experiment runs.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {workspace.notes.map((note) => (
+                                        <div
+                                            key={note._id}
+                                            className="bg-white rounded-xl border border-[#E2E8F0] p-4 space-y-2"
+                                        >
+                                            <h4 className="text-sm font-semibold text-[#172033]">
+                                                {note.title}
+                                            </h4>
+                                            <p className="text-sm text-[#64748B] leading-relaxed whitespace-pre-line">
+                                                {note.content}
+                                            </p>
+                                            <span className="block text-xs text-[#64748B] pt-2 border-t border-[#E2E8F0]">
+                                                {new Date(note.createdAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* TAB: MILESTONES & TASKS */}
+                    {activeTab === "tasks" && (
+                        <div className="space-y-5">
+                            <div className="pb-4 border-b border-[#E2E8F0]">
+                                <h2 className="text-base font-semibold text-[#172033]">
+                                    Research Milestones & Deliverables
+                                </h2>
+                                <p className="text-xs text-[#64748B] mt-0.5">
+                                    Execution checklist toward publication, replication, and benchmark release.
+                                </p>
+                            </div>
+
+                            {isMember && (
+                                <form onSubmit={handleAddTask} className="flex gap-2">
+                                    <Input
+                                        placeholder="Add milestone (e.g. Complete 4-bit attention matrix benchmarks)..."
+                                        value={taskTitle}
+                                        onChange={(e) => setTaskTitle(e.target.value)}
+                                        className="flex-1"
+                                        required
+                                    />
+                                    <Button type="submit" disabled={taskSubmitting} className="shrink-0">
+                                        <Plus className="w-4 h-4" />
+                                        <span>Add Milestone</span>
+                                    </Button>
+                                </form>
+                            )}
+
+                            {!workspace.tasks || workspace.tasks.length === 0 ? (
+                                <div className="text-center py-12 bg-[#F8FAFC] rounded-xl border border-dashed border-[#E2E8F0] p-8">
+                                    <ListTodo className="w-7 h-7 text-[#64748B] mx-auto mb-2" />
+                                    <p className="text-sm font-semibold text-[#172033]">
+                                        No milestones scheduled
+                                    </p>
+                                    <p className="text-xs text-[#64748B] max-w-sm mx-auto mt-1">
+                                        Break down your research project into verifiable deliverables.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {workspace.tasks.map((task) => {
+                                        const isCompleted = task.status === "completed";
+                                        return (
+                                            <div
+                                                key={task._id}
+                                                onClick={() =>
+                                                    isMember && handleToggleTask(task._id, task.status)
+                                                }
+                                                className={`p-3 rounded-xl border transition flex items-center justify-between gap-3 ${
+                                                    isMember ? "cursor-pointer hover:border-slate-300" : ""
+                                                } ${
+                                                    isCompleted
+                                                        ? "bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B]"
+                                                        : "bg-white border-[#E2E8F0] text-[#172033]"
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div
+                                                        className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${
+                                                            isCompleted
+                                                                ? "bg-[#15803D] border-[#15803D] text-white"
+                                                                : "border-slate-300 bg-white"
+                                                        }`}
+                                                    >
+                                                        {isCompleted && <Check className="w-3 h-3" />}
+                                                    </div>
+                                                    <span
+                                                        className={`text-sm truncate ${
+                                                            isCompleted ? "line-through" : ""
+                                                        }`}
+                                                    >
+                                                        {task.title}
+                                                    </span>
+                                                </div>
+                                                <span
+                                                    className={`text-[11px] font-medium px-2 py-0.5 rounded capitalize shrink-0 ${
+                                                        isCompleted
+                                                            ? "bg-emerald-50 text-[#15803D] border border-emerald-200"
+                                                            : "bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]"
+                                                    }`}
+                                                >
+                                                    {task.status}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* TAB: TEAM MEMBERS & INVITATIONS */}
+                    {activeTab === "members" && (
+                        <div className="space-y-5">
+                            <div className="pb-4 border-b border-[#E2E8F0]">
+                                <h2 className="text-base font-semibold text-[#172033]">
+                                    Collaborating Researchers ({workspace.members?.length || 0})
+                                </h2>
+                                <p className="text-xs text-[#64748B] mt-0.5">
+                                    Scholars with access to this workspace's channels, files, and evidence board.
+                                </p>
+                            </div>
+
+                            {isMember && (
+                                <form
+                                    onSubmit={handleInvite}
+                                    className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-4 space-y-2.5"
+                                >
+                                    <label className="prism-label">Invite Collaborator by Email</label>
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <Input
+                                            type="email"
+                                            placeholder="researcher@university.edu"
+                                            value={inviteEmail}
+                                            onChange={(e) => setInviteEmail(e.target.value)}
+                                            className="flex-1"
+                                            required
+                                        />
+                                        <Button
+                                            type="submit"
+                                            disabled={inviteLoading}
+                                            className="shrink-0"
+                                        >
+                                            <UserPlus className="w-3.5 h-3.5" />
+                                            <span>{inviteLoading ? "Sending..." : "Invite Researcher"}</span>
+                                        </Button>
+                                    </div>
+                                    {inviteSuccess && (
+                                        <p className="text-xs text-[#15803D] flex items-center gap-1 font-medium">
+                                            <Check className="w-3.5 h-3.5" />
+                                            <span>{inviteSuccess}</span>
+                                        </p>
+                                    )}
+                                </form>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {workspace.members?.map((member) => (
+                                    <Link
+                                        key={member._id}
+                                        to={`/profile/${member._id}`}
+                                        className="bg-white hover:border-slate-300 rounded-xl border border-[#E2E8F0] p-3.5 flex items-center justify-between gap-3 transition"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-9 h-9 rounded-full bg-[#EEF2FF] text-[#4F46E5] border border-indigo-200 flex items-center justify-center text-xs font-semibold uppercase shrink-0">
+                                                {member.name?.charAt(0) || "R"}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-[#172033] truncate">
+                                                    {member.name}
+                                                </p>
+                                                <p className="text-xs text-[#64748B] truncate">
+                                                    {member.institution || member.role || "Researcher"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {(workspace.creator?._id || workspace.creator)?.toString() ===
+                                            member._id?.toString() && (
+                                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#EEF2FF] text-[#4F46E5] border border-indigo-200 shrink-0">
+                                                Lead
+                                            </span>
+                                        )}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Zotero Reference Sync Modal */}

@@ -3,20 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { toggleUpvotePost, toggleSavePost } from "@/services/post";
 import { API_BASE_URL } from "@/services/config";
-import { 
-  FlaskConical, 
-  HelpCircle, 
-  GraduationCap, 
-  Users, 
-  FileText, 
-  Bookmark, 
-  ChevronUp, 
-  MessageSquare, 
-  ExternalLink, 
-  Layers,
-  Share2,
-  Check,
-  Download
+import {
+    FlaskConical,
+    HelpCircle,
+    GraduationCap,
+    Users,
+    FileText,
+    Bookmark,
+    ChevronUp,
+    MessageSquare,
+    ExternalLink,
+    Layers,
+    Share2,
+    Check,
+    Download
 } from "lucide-react";
 
 const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
@@ -45,35 +45,35 @@ const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
         switch (type) {
             case "question":
                 return {
-                    icon: <HelpCircle className="w-3 h-3 text-amber-600" />,
+                    icon: <HelpCircle className="w-3 h-3 text-[#D97706]" />,
                     label: "Question",
-                    badgeClass: "bg-amber-50 text-amber-800 border-amber-200"
+                    badgeClass: "bg-amber-50 text-amber-800 border-amber-200/80"
                 };
             case "idea":
             case "research":
                 return {
-                    icon: <FlaskConical className="w-3 h-3 text-indigo-600" />,
+                    icon: <FlaskConical className="w-3 h-3 text-[#4F46E5]" />,
                     label: "Research",
-                    badgeClass: "bg-indigo-50 text-indigo-800 border-indigo-200"
+                    badgeClass: "bg-[#EEF2FF] text-[#4F46E5] border-indigo-200/80"
                 };
             case "study":
                 return {
-                    icon: <GraduationCap className="w-3 h-3 text-emerald-600" />,
-                    label: "Study",
-                    badgeClass: "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    icon: <GraduationCap className="w-3 h-3 text-[#15803D]" />,
+                    label: "Replication",
+                    badgeClass: "bg-emerald-50 text-[#15803D] border-emerald-200/80"
                 };
             case "team":
             case "collaboration":
                 return {
-                    icon: <Users className="w-3 h-3 text-purple-600" />,
+                    icon: <Users className="w-3 h-3 text-[#4F46E5]" />,
                     label: "Lab Call",
-                    badgeClass: "bg-purple-50 text-purple-800 border-purple-200"
+                    badgeClass: "bg-[#EEF2FF] text-[#4F46E5] border-indigo-200/80"
                 };
             default:
                 return {
-                    icon: <FileText className="w-3 h-3 text-slate-500" />,
+                    icon: <FileText className="w-3 h-3 text-[#64748B]" />,
                     label: "Discussion",
-                    badgeClass: "bg-slate-100 text-slate-700 border-slate-200"
+                    badgeClass: "bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]"
                 };
         }
     };
@@ -97,7 +97,7 @@ const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
                 setUpvoted(res.data.isUpvoted);
                 setUpvoteCount(res.data.upvotesCount);
             }
-        } catch (err) {
+        } catch {
             setUpvoted(!nextUpvoted);
             setUpvoteCount(prev => prev - (nextUpvoted ? 1 : -1));
         } finally {
@@ -120,7 +120,7 @@ const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
         try {
             await toggleSavePost(post._id);
             if (onSaveToggle) onSaveToggle(post._id, nextSaved);
-        } catch (err) {
+        } catch {
             setSaved(!nextSaved);
         } finally {
             setSaveLoading(false);
@@ -137,208 +137,205 @@ const PostCard = ({ post, isSavedInitial = false, onSaveToggle }) => {
     };
 
     const badge = getPostTypeBadge(post.type);
+    const imageAttachments = (post.attachments || []).filter(a => a.type === "image" || a.mimeType?.startsWith("image/"));
+    const docAttachments = (post.attachments || []).filter(a => a.type !== "image" && !a.mimeType?.startsWith("image/"));
 
     return (
-        <article className="bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-4 sm:p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-3 transition duration-150">
-            {/* Header: Author Info + Type Badge */}
+        <article className="prism-card p-5 hover:border-slate-300 transition-colors space-y-3">
+            {/* Header: Author + Category */}
             <div className="flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2.5 min-w-0">
                     <Link
                         to={`/profile/${post.author?._id}`}
-                        className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center text-xs font-bold text-indigo-700 shrink-0 hover:ring-2 hover:ring-indigo-300 transition"
+                        className="w-8 h-8 rounded-full bg-[#EEF2FF] border border-indigo-200/80 flex items-center justify-center text-xs font-semibold text-[#4F46E5] shrink-0"
                     >
-                        {post.author?.name?.charAt(0) || "R"}
+                        {post.author?.name?.charAt(0)?.toUpperCase() || "R"}
                     </Link>
 
                     <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
                         <Link
                             to={`/profile/${post.author?._id}`}
-                            className="font-bold text-slate-900 hover:text-indigo-600 transition truncate"
+                            className="font-semibold text-[#172033] hover:text-[#4F46E5] transition-colors truncate"
                         >
                             {post.author?.name || "Researcher"}
                         </Link>
 
                         {post.author?.role && (
-                            <span className="text-[10px] font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 capitalize">
+                            <span className="text-[11px] text-[#64748B] bg-[#F8FAFC] px-1.5 py-0.5 rounded border border-[#E2E8F0] capitalize">
                                 {post.author.role}
                             </span>
                         )}
 
                         {post.author?.institution && (
-                            <span className="hidden sm:inline text-slate-500 text-[11px] truncate max-w-[170px]">
-                                • {post.author.institution}
+                            <span className="hidden sm:inline text-[#64748B] truncate max-w-[180px]">
+                                · {post.author.institution}
                             </span>
                         )}
 
-                        <span className="text-slate-400 text-[11px]">
-                            • {getTimeAgo(post.createdAt)}
+                        <span className="text-[#64748B]">
+                            · {getTimeAgo(post.createdAt)}
                         </span>
                     </div>
                 </div>
 
-                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border shrink-0 ${badge.badgeClass}`}>
+                <div className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border shrink-0 ${badge.badgeClass}`}>
                     {badge.icon}
                     <span>{badge.label}</span>
                 </div>
             </div>
 
-            {/* Title & Excerpt */}
-            <Link to={`/post/${post._id}`} className="block group/link space-y-1">
-                <h3 className="text-base font-bold text-slate-900 group-hover/link:text-indigo-600 transition tracking-tight leading-snug">
+            {/* Title & Summary */}
+            <Link to={`/post/${post._id}`} className="block group/link space-y-1.5">
+                <h3 className="text-base font-semibold text-[#172033] group-hover/link:text-[#4F46E5] transition-colors tracking-tight leading-snug">
                     {post.title}
                 </h3>
-                <p className="text-xs sm:text-[13px] text-slate-600 line-clamp-3 leading-relaxed">
+                <p className="text-sm text-[#64748B] line-clamp-3 leading-relaxed">
                     {post.content}
                 </p>
             </Link>
 
-            {/* Research Attachments (Figures & Preprints) */}
-            {post.attachments && post.attachments.length > 0 && (
-                <div className="space-y-2 pt-1">
-                    {/* Image Attachments */}
-                    {post.attachments.filter(a => a.type === "image" || a.mimeType?.startsWith("image/")).length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-1">
-                            {post.attachments
-                                .filter(a => a.type === "image" || a.mimeType?.startsWith("image/"))
-                                .slice(0, 2)
-                                .map((img, idx) => {
-                                    const src = img.url?.startsWith("http") ? img.url : `${API_BASE_URL}${img.url?.startsWith("/") ? "" : "/"}${img.url}`;
-                                    return (
-                                        <div key={idx} className="relative rounded-lg overflow-hidden group/img aspect-video bg-white border border-slate-200">
-                                            <img
-                                                src={src}
-                                                alt={img.originalName || "Research figure"}
-                                                className="w-full h-full object-cover group-hover/img:scale-102 transition duration-200"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition flex items-end p-2">
-                                                <span className="text-[11px] text-white font-medium truncate">{img.originalName}</span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+            {/* Attachments */}
+            {(imageAttachments.length > 0 || docAttachments.length > 0) && (
+                <div className="space-y-2 pt-0.5">
+                    {imageAttachments.length > 0 && (
+                        <div className={`grid ${imageAttachments.length > 1 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"} gap-2 rounded-lg overflow-hidden border border-[#E2E8F0] bg-[#F8FAFC] p-1.5`}>
+                            {imageAttachments.slice(0, 2).map((img, idx) => {
+                                const src = img.url?.startsWith("http") ? img.url : `${API_BASE_URL}${img.url?.startsWith("/") ? "" : "/"}${img.url}`;
+                                return (
+                                    <Link
+                                        key={idx}
+                                        to={`/post/${post._id}`}
+                                        className="relative rounded-md overflow-hidden aspect-video bg-white border border-[#E2E8F0] block"
+                                    >
+                                        <img
+                                            src={src}
+                                            alt={img.originalName || "Research figure"}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </Link>
+                                );
+                            })}
                         </div>
                     )}
 
-                    {/* Document Attachments */}
-                    {post.attachments.filter(a => a.type !== "image" && !a.mimeType?.startsWith("image/")).length > 0 && (
+                    {docAttachments.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                            {post.attachments
-                                .filter(a => a.type !== "image" && !a.mimeType?.startsWith("image/"))
-                                .map((doc, idx) => {
-                                    const fileUrl = doc.url?.startsWith("http") ? doc.url : `${API_BASE_URL}${doc.url?.startsWith("/") ? "" : "/"}${doc.url}`;
-                                    return (
-                                        <a
-                                            key={idx}
-                                            href={fileUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition"
-                                        >
-                                            <FileText className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                                            <span className="truncate max-w-[200px]">{doc.originalName}</span>
-                                            <Download className="w-3 h-3 text-slate-400 shrink-0" />
-                                        </a>
-                                    );
-                                })}
+                            {docAttachments.map((doc, idx) => {
+                                const fileUrl = doc.url?.startsWith("http") ? doc.url : `${API_BASE_URL}${doc.url?.startsWith("/") ? "" : "/"}${doc.url}`;
+                                return (
+                                    <a
+                                        key={idx}
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-[#172033] hover:border-[#4F46E5] hover:text-[#4F46E5] transition-colors"
+                                    >
+                                        <FileText className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
+                                        <span className="truncate max-w-[200px]">{doc.originalName}</span>
+                                        <Download className="w-3 h-3 text-[#64748B] shrink-0" />
+                                    </a>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
             )}
 
-            {/* Academic Tags & Verified DOI Link */}
-            <div className="flex items-center gap-2 flex-wrap pt-0.5">
-                {post.doi && (
-                    <a
-                        href={`https://doi.org/${post.doi}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 transition"
-                    >
-                        <span>DOI: {post.doi}</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                )}
+            {/* DOI & Topic Tags */}
+            {((post.doi) || (post.tags && post.tags.length > 0)) && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    {post.doi && (
+                        <a
+                            href={`https://doi.org/${post.doi}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-[#EEF2FF] text-[#4F46E5] border border-indigo-200/80 hover:bg-indigo-100/80 transition-colors"
+                        >
+                            <span>DOI: {post.doi}</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                    )}
 
-                {post.tags && post.tags.slice(0, 4).map((tag, idx) => (
-                    <span
-                        key={idx}
-                        className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200"
-                    >
-                        #{tag}
-                    </span>
-                ))}
-            </div>
+                    {post.tags && post.tags.slice(0, 4).map((tag, idx) => (
+                        <span
+                            key={idx}
+                            className="text-xs px-2 py-0.5 rounded-md bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]"
+                        >
+                            #{tag}
+                        </span>
+                    ))}
+                </div>
+            )}
 
-            {/* Bottom Interaction Action Bar (Reddit & LinkedIn style) */}
-            <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-xs text-slate-600">
-                <div className="flex items-center gap-1 sm:gap-2">
-                    {/* Upvote Pill */}
+            {/* Footer Actions */}
+            <div className="flex items-center justify-between pt-2.5 border-t border-[#E2E8F0] text-xs text-[#64748B]">
+                <div className="flex items-center gap-1">
                     <button
+                        type="button"
                         onClick={handleUpvote}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition font-medium text-xs ${
+                        className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg transition-colors font-medium ${
                             upvoted
-                                ? "bg-indigo-100 text-indigo-700 font-bold border border-indigo-200"
-                                : "hover:bg-slate-100 text-slate-600 border border-transparent"
+                                ? "bg-[#EEF2FF] text-[#4F46E5] border border-indigo-200/80"
+                                : "hover:bg-[#F8FAFC] hover:text-[#172033] border border-transparent"
                         }`}
                         title="Upvote discussion"
                     >
-                        <ChevronUp className={`w-4 h-4 ${upvoted ? "text-indigo-700 stroke-[2.5]" : "text-slate-500"}`} />
+                        <ChevronUp className={`w-4 h-4 ${upvoted ? "text-[#4F46E5] stroke-[2.5]" : "text-[#64748B]"}`} />
                         <span>{upvoteCount}</span>
                     </button>
 
-                    {/* Comments button */}
                     <Link
                         to={`/post/${post._id}`}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-slate-100 text-slate-600 transition"
+                        className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg hover:bg-[#F8FAFC] hover:text-[#172033] transition-colors"
                     >
-                        <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
+                        <MessageSquare className="w-3.5 h-3.5" />
                         <span>{post.commentsCount !== undefined ? post.commentsCount : "Discuss"}</span>
                     </Link>
 
-                    {/* Share Button */}
                     <button
+                        type="button"
                         onClick={handleCopy}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-slate-100 text-slate-600 transition"
-                        title="Copy discussion link"
+                        className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg hover:bg-[#F8FAFC] hover:text-[#172033] transition-colors"
+                        title="Copy link"
                     >
                         {copied ? (
                             <>
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                <span className="text-emerald-700 font-medium">Copied</span>
+                                <Check className="w-3.5 h-3.5 text-[#15803D]" />
+                                <span className="text-[#15803D] font-medium">Copied</span>
                             </>
                         ) : (
                             <>
-                                <Share2 className="w-3.5 h-3.5 text-slate-500" />
+                                <Share2 className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">Share</span>
                             </>
                         )}
                     </button>
 
-                    {/* Bookmark / Save */}
                     <button
+                        type="button"
                         onClick={handleSave}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition ${
+                        className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg transition-colors ${
                             saved
-                                ? "text-emerald-700 bg-emerald-50 border border-emerald-200 font-medium"
-                                : "hover:bg-slate-100 text-slate-600 border border-transparent"
+                                ? "text-[#15803D] bg-emerald-50 border border-emerald-200/80 font-medium"
+                                : "hover:bg-[#F8FAFC] hover:text-[#172033] border border-transparent"
                         }`}
                         title="Save to Library"
                     >
-                        <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-emerald-600 text-emerald-600" : "text-slate-500"}`} />
+                        <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-[#15803D] text-[#15803D]" : ""}`} />
                         <span className="hidden sm:inline">{saved ? "Saved" : "Save"}</span>
                     </button>
                 </div>
 
-                {/* Discussion-to-Workspace Continuity Bridge */}
+                {/* Continuity Bridge */}
                 <Link
-                    to={`/workspace/create?fromPost=${post._id}`}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-lg transition shrink-0"
-                    title="Form a collaborative research workspace around this hypothesis"
+                    to={`/workspace/create?postId=${post._id}&title=${encodeURIComponent(post.title)}`}
+                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-[#4F46E5] bg-[#EEF2FF] hover:bg-indigo-100/80 border border-indigo-200/70 transition-colors shrink-0"
+                    title="Start a collaborative research workspace from this discussion"
                 >
-                    <Layers className="w-3.5 h-3.5 text-purple-600" />
-                    <span>Create Lab</span>
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Start Lab</span>
                 </Link>
             </div>
         </article>

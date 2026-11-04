@@ -10,7 +10,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-    ShieldCheck,
     CheckCircle2,
     XCircle,
     AlertCircle,
@@ -21,10 +20,9 @@ import {
     Library,
     RefreshCw,
     Key,
-    UserCheck,
     FolderKanban,
     HelpCircle,
-    Lock
+    X
 } from "lucide-react";
 
 export default function Settings() {
@@ -33,7 +31,6 @@ export default function Settings() {
     const [actionLoading, setActionLoading] = useState(false);
     const [notification, setNotification] = useState(null);
 
-    // Zotero Form Modal
     const [showZoteroModal, setShowZoteroModal] = useState(false);
     const [zoteroUserId, setZoteroUserId] = useState("");
     const [zoteroApiKey, setZoteroApiKey] = useState("");
@@ -58,7 +55,6 @@ export default function Settings() {
         fetchStatus();
     }, []);
 
-    // Load Zotero collections if connected
     useEffect(() => {
         if (status?.zotero?.connected) {
             getZoteroCollections()
@@ -91,7 +87,7 @@ export default function Settings() {
         setActionLoading(true);
         try {
             await disconnectGoogle();
-            setNotification({ type: "success", message: "Google account successfully disconnected." });
+            setNotification({ type: "success", message: "Google account disconnected." });
             fetchStatus();
         } catch (err) {
             setNotification({ type: "error", message: err.message || "Failed to disconnect Google account." });
@@ -119,7 +115,7 @@ export default function Settings() {
                 setShowZoteroModal(false);
                 setZoteroUserId("");
                 setZoteroApiKey("");
-                setNotification({ type: "success", message: `Zotero connected successfully as ${res.data.username || "Scholar"}!` });
+                setNotification({ type: "success", message: `Zotero connected as ${res.data.username || "Scholar"}.` });
                 fetchStatus();
             }
         } catch (err) {
@@ -145,315 +141,310 @@ export default function Settings() {
     };
 
     return (
-        <div className="min-w-0 max-w-4xl mx-auto space-y-6 pb-16">
+        <div className="min-w-0 max-w-4xl mx-auto space-y-5 pb-16">
             {/* Header */}
-            <div className="bg-gradient-to-r from-slate-900 via-indigo-950/30 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] font-mono">
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>CONNECTED RESEARCH APPS</span>
-                        </div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-1">
-                            Research Integrations & Storage
-                        </h1>
-                        <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                            Connect your Google Drive, Google Meet, Zotero reference library, and OpenAlex discovery engine.
-                        </p>
-                    </div>
-                    <Button
-                        variant="outline"
-                        onClick={fetchStatus}
-                        disabled={loading}
-                        className="bg-slate-900 border-slate-800 text-slate-300 text-xs h-9 flex items-center gap-1.5"
-                    >
-                        <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                        <span className="hidden sm:inline">Refresh Status</span>
-                    </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-xl font-semibold text-[#172033] tracking-tight">
+                        Integrations & Cloud Storage
+                    </h1>
+                    <p className="text-sm text-[#64748B] mt-1">
+                        Manage connected cloud storage, reference managers, and scholarly discovery services.
+                    </p>
                 </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchStatus}
+                    disabled={loading}
+                    className="self-start sm:self-auto"
+                >
+                    <RefreshCw className={`w-3.5 h-3.5 text-[#64748B] ${loading ? "animate-spin" : ""}`} />
+                    <span>Refresh Status</span>
+                </Button>
             </div>
 
             {/* Notification Alert */}
             {notification && (
-                <div className={`p-4 rounded-xl border text-xs flex items-start justify-between gap-3 ${
-                    notification.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' :
-                    notification.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' :
-                    'bg-rose-500/10 border-rose-500/20 text-rose-300'
+                <div className={`p-3.5 rounded-lg border text-xs font-medium flex items-start justify-between gap-3 ${
+                    notification.type === "success" ? "bg-emerald-50 border-emerald-200 text-[#15803D]" :
+                    notification.type === "warning" ? "bg-amber-50 border-amber-200 text-[#D97706]" :
+                    "bg-[#FEF2F2] border-red-200 text-[#DC2626]"
                 }`}>
                     <div className="flex items-center gap-2">
-                        {notification.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> :
-                         notification.type === 'warning' ? <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" /> :
-                         <XCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+                        {notification.type === "success" ? <CheckCircle2 className="w-4 h-4 shrink-0" /> :
+                         notification.type === "warning" ? <AlertCircle className="w-4 h-4 shrink-0" /> :
+                         <XCircle className="w-4 h-4 shrink-0" />}
                         <span>{notification.message}</span>
                     </div>
-                    <button onClick={() => setNotification(null)} className="text-slate-400 hover:text-white">
-                        <XCircle className="w-3.5 h-3.5" />
+                    <button
+                        type="button"
+                        onClick={() => setNotification(null)}
+                        className="text-[#64748B] hover:text-[#172033]"
+                    >
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
             )}
 
-            {/* 1. Google Drive Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                            <HardDrive className="w-6 h-6 text-amber-400" />
-                        </div>
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                                <h3 className="text-base font-bold text-white">Google Drive</h3>
-                                {status?.google_drive?.connected ? (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-center gap-1">
-                                        <CheckCircle2 className="w-3 h-3" />
-                                        Connected
-                                    </span>
-                                ) : (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700">
-                                        Not Connected
-                                    </span>
+            {/* Integration Cards */}
+            <div className="space-y-3">
+                {/* 1. Google Drive */}
+                <div className="prism-card p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                            <div className="w-10 h-10 rounded-lg bg-[#EEF2FF] flex items-center justify-center shrink-0 text-[#4F46E5]">
+                                <HardDrive className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="text-sm font-semibold text-[#172033]">Google Drive</h3>
+                                    {status?.google_drive?.connected ? (
+                                        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 border border-emerald-200 text-[#15803D] inline-flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" />
+                                            Connected
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]">
+                                            Not Connected
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-[#64748B] leading-relaxed max-w-xl">
+                                    Attach Google Drive datasets, notebooks, and shared lab folders directly to your workspaces alongside local Prism file uploads.
+                                </p>
+                                {status?.google_drive?.connected && (
+                                    <p className="text-xs text-[#4F46E5] font-mono pt-0.5">
+                                        Account: {status.google_drive.profile?.email || "Google User"}
+                                    </p>
                                 )}
                             </div>
-                            <p className="text-xs text-slate-400 leading-relaxed max-w-xl">
-                                Access and attach Google Drive datasets, papers, and lab notebooks directly to your research workspaces. Supports Google Drive picker and zero-download in-browser viewing.
-                            </p>
-                            {status?.google_drive?.connected && (
-                                <p className="text-[11px] text-indigo-300 font-mono pt-1">
-                                    Linked Account: {status.google_drive.profile?.email || "Google User"}
-                                </p>
+                        </div>
+
+                        <div className="shrink-0">
+                            {status?.google_drive?.connected ? (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDisconnectGoogle}
+                                    disabled={actionLoading}
+                                    className="text-[#DC2626] hover:bg-red-50 border-red-200"
+                                >
+                                    Disconnect
+                                </Button>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    onClick={handleConnectGoogle}
+                                    disabled={actionLoading}
+                                >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                    <span>Connect Drive</span>
+                                </Button>
                             )}
                         </div>
                     </div>
-
-                    <div className="shrink-0">
-                        {status?.google_drive?.connected ? (
-                            <Button
-                                variant="outline"
-                                onClick={handleDisconnectGoogle}
-                                disabled={actionLoading}
-                                className="bg-slate-950 border-slate-800 text-red-400 hover:bg-red-500/10 hover:text-red-300 text-xs h-9"
-                            >
-                                Disconnect
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={handleConnectGoogle}
-                                disabled={actionLoading}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 px-4 flex items-center gap-1.5"
-                            >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                <span>Connect Drive</span>
-                            </Button>
-                        )}
-                    </div>
                 </div>
-            </div>
 
-            {/* 2. Google Meet Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                            <Video className="w-6 h-6 text-emerald-400" />
+                {/* 2. Video Conferencing */}
+                <div className="prism-card p-5">
+                    <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200/70 flex items-center justify-center shrink-0 text-[#15803D]">
+                            <Video className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                                <h3 className="text-base font-bold text-white">Google Meet</h3>
-                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-center gap-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-semibold text-[#172033]">Workspace Video Rooms</h3>
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 border border-emerald-200 text-[#15803D] inline-flex items-center gap-1">
                                     <CheckCircle2 className="w-3 h-3" />
                                     Active
                                 </span>
                             </div>
-                            <p className="text-xs text-slate-400 leading-relaxed max-w-xl">
-                                Create instant or scheduled research meeting rooms from inside any research workspace. All meetings automatically pre-populate the workspace problem brief, references, and evidence notes.
+                            <p className="text-xs text-[#64748B] leading-relaxed max-w-xl">
+                                Launch instant shared conference rooms or schedule sessions with Google Meet / Jitsi links directly inside any research lab, complete with synchronized notes and decision tracking.
                             </p>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* 3. Zotero Reference Manager Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
-                            <Library className="w-6 h-6 text-rose-400" />
+                {/* 3. Zotero Reference Manager */}
+                <div className="prism-card p-5 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                            <div className="w-10 h-10 rounded-lg bg-[#EEF2FF] flex items-center justify-center shrink-0 text-[#4F46E5]">
+                                <Library className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="text-sm font-semibold text-[#172033]">Zotero Reference Manager</h3>
+                                    {status?.zotero?.connected ? (
+                                        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 border border-emerald-200 text-[#15803D] inline-flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" />
+                                            Connected ({status.zotero.username || "Scholar"})
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]">
+                                            Not Connected
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-[#64748B] leading-relaxed max-w-xl">
+                                    Synchronize personal Zotero collections into workspace bibliographies and export formatted BibTeX and RIS files.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="shrink-0">
+                            {status?.zotero?.connected ? (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDisconnectZotero}
+                                    disabled={actionLoading}
+                                    className="text-[#DC2626] hover:bg-red-50 border-red-200"
+                                >
+                                    Disconnect
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowZoteroModal(true)}
+                                >
+                                    <Key className="w-3.5 h-3.5 text-[#64748B]" />
+                                    <span>Connect Zotero</span>
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    {status?.zotero?.connected && zoteroCollections.length > 0 && (
+                        <div className="pt-3 border-t border-[#E2E8F0]">
+                            <h4 className="text-xs font-medium text-[#172033] mb-2 flex items-center gap-1.5">
+                                <FolderKanban className="w-3.5 h-3.5 text-[#4F46E5]" />
+                                <span>Synced Collections ({zoteroCollections.length})</span>
+                            </h4>
+                            <div className="flex flex-wrap gap-1.5">
+                                {zoteroCollections.map(col => (
+                                    <span
+                                        key={col.key}
+                                        className="text-xs bg-[#F8FAFC] border border-[#E2E8F0] text-[#172033] px-2.5 py-1 rounded-md"
+                                    >
+                                        {col.name} ({col.numItems})
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* 4. OpenAlex */}
+                <div className="prism-card p-5">
+                    <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-lg bg-[#EEF2FF] flex items-center justify-center shrink-0 text-[#4F46E5]">
+                            <BookOpen className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                                <h3 className="text-base font-bold text-white">Zotero Reference Manager</h3>
-                                {status?.zotero?.connected ? (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-center gap-1">
-                                        <CheckCircle2 className="w-3 h-3" />
-                                        Connected ({status.zotero.username || "Scholar"})
-                                    </span>
-                                ) : (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700">
-                                        Not Connected
-                                    </span>
-                                )}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-semibold text-[#172033]">OpenAlex Academic Index</h3>
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 border border-emerald-200 text-[#15803D] inline-flex items-center gap-1">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Connected
+                                </span>
                             </div>
-                            <p className="text-xs text-slate-400 leading-relaxed max-w-xl">
-                                Synchronize your personal Zotero bibliographies, sync collections into workspace literature, and export verified BibTeX and RIS citations.
+                            <p className="text-xs text-[#64748B] leading-relaxed max-w-xl">
+                                Live access to 250M+ scholarly works, decoded abstracts, author profiles, and citation counts in Literature Discovery.
                             </p>
                         </div>
                     </div>
-
-                    <div className="shrink-0">
-                        {status?.zotero?.connected ? (
-                            <Button
-                                variant="outline"
-                                onClick={handleDisconnectZotero}
-                                disabled={actionLoading}
-                                className="bg-slate-950 border-slate-800 text-red-400 hover:bg-red-500/10 hover:text-red-300 text-xs h-9"
-                            >
-                                Disconnect
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={() => setShowZoteroModal(true)}
-                                className="bg-rose-600 hover:bg-rose-500 text-white text-xs h-9 px-4 flex items-center gap-1.5"
-                            >
-                                <Key className="w-3.5 h-3.5" />
-                                <span>Connect Zotero</span>
-                            </Button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Show Collections if connected */}
-                {status?.zotero?.connected && zoteroCollections.length > 0 && (
-                    <div className="pt-3 border-t border-slate-800">
-                        <h4 className="text-xs font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
-                            <FolderKanban className="w-3.5 h-3.5 text-indigo-400" />
-                            <span>Available Zotero Collections ({zoteroCollections.length})</span>
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                            {zoteroCollections.map(col => (
-                                <span
-                                    key={col.key}
-                                    className="text-[11px] bg-slate-950 border border-slate-800 text-slate-300 px-2.5 py-1 rounded-md"
-                                >
-                                    {col.name} ({col.numItems} items)
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* 4. OpenAlex Scholarly Discovery Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
-                        <BookOpen className="w-6 h-6 text-purple-400" />
-                    </div>
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <h3 className="text-base font-bold text-white">OpenAlex Academic Engine</h3>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Live & Connected
-                            </span>
-                        </div>
-                        <p className="text-xs text-slate-400 leading-relaxed max-w-xl">
-                            Real-time connection to the global OpenAlex index of 250M+ scholarly works, decoded inverted-index abstracts, authors, and citation counts.
-                        </p>
-                    </div>
                 </div>
             </div>
 
-            {/* Google Cloud Setup Requirements Guide */}
+            {/* Google OAuth Configuration Guide */}
             {(!status?.google_drive?.configured || !status?.google_drive?.connected) && (
-                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-3">
-                    <div className="flex items-center gap-2 text-indigo-300">
-                        <HelpCircle className="w-4 h-4 text-indigo-400" />
-                        <h4 className="text-xs sm:text-sm font-bold">Google Cloud Setup Guide</h4>
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-5 space-y-3">
+                    <div className="flex items-center gap-2 text-[#172033]">
+                        <HelpCircle className="w-4 h-4 text-[#4F46E5]" />
+                        <h4 className="text-sm font-semibold">Google OAuth Configuration</h4>
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                        To enable real Google Drive OAuth and Google Meet REST API in Prism, add your Google Cloud credentials to the backend <code className="text-indigo-300 bg-slate-900 px-1 py-0.5 rounded font-mono">.env</code>:
+                    <p className="text-xs text-[#64748B] leading-relaxed">
+                        To enable live Google Drive OAuth sign-in, configure these environment variables in <code className="text-[#172033] bg-white border border-[#E2E8F0] px-1.5 py-0.5 rounded font-mono text-[11px]">prisma-research-app/.env</code> and register the exact redirect URI in Google Cloud Console:
                     </p>
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-slate-300 space-y-1">
+                    <div className="bg-white border border-[#E2E8F0] rounded-lg p-3 font-mono text-[11px] text-[#172033] space-y-1 overflow-x-auto">
                         <div>GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com</div>
                         <div>GOOGLE_CLIENT_SECRET=your-google-client-secret</div>
                         <div>GOOGLE_REDIRECT_URI=http://localhost:3000/api/integrations/google/callback</div>
                     </div>
-                    <p className="text-[11px] text-slate-500">
-                        In Google Cloud Console, add <code className="text-slate-400">http://localhost:3000/api/integrations/google/callback</code> under <strong>Authorized redirect URIs</strong>.
-                    </p>
                 </div>
             )}
 
             {/* Zotero Connect Modal */}
             {showZoteroModal && (
-                <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div className="fixed inset-0 !mt-0 z-50 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+                    <div className="bg-white border border-[#E2E8F0] rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
                             <div className="flex items-center gap-2">
-                                <Library className="w-5 h-5 text-rose-400" />
-                                <h3 className="text-sm font-bold text-white">Connect Zotero Library</h3>
+                                <Library className="w-4 h-4 text-[#4F46E5]" />
+                                <h3 className="text-sm font-semibold text-[#172033]">Connect Zotero Library</h3>
                             </div>
-                            <button onClick={() => setShowZoteroModal(false)} className="text-slate-400 hover:text-white">
-                                <XCircle className="w-4 h-4" />
+                            <button
+                                type="button"
+                                onClick={() => setShowZoteroModal(false)}
+                                className="text-[#64748B] hover:text-[#172033]"
+                            >
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
 
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Enter your Zotero User ID and API key to enable bibliography synchronization.
+                        <p className="text-xs text-[#64748B] leading-relaxed">
+                            Enter your Zotero User ID and Personal API Key to synchronize collections.
                         </p>
 
                         {zoteroError && (
-                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-xs">
+                            <div className="p-3 bg-[#FEF2F2] border border-red-200 rounded-lg text-[#DC2626] text-xs">
                                 {zoteroError}
                             </div>
                         )}
 
-                        <form onSubmit={handleConnectZoteroSubmit} className="space-y-3">
+                        <form onSubmit={handleConnectZoteroSubmit} className="space-y-3.5">
                             <div>
-                                <label className="text-[11px] font-medium text-slate-300 block mb-1">
-                                    Zotero User ID
-                                </label>
+                                <label className="prism-label">Zotero User ID</label>
                                 <Input
                                     placeholder="e.g. 1234567"
                                     value={zoteroUserId}
                                     onChange={(e) => setZoteroUserId(e.target.value)}
-                                    className="h-9 bg-slate-950 border-slate-800 text-xs text-white"
                                     required
                                 />
-                                <p className="text-[10px] text-slate-500 mt-1">
-                                    Found on <a href="https://www.zotero.org/settings/keys" target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">zotero.org/settings/keys</a> labeled "Your userID for use in API calls".
+                                <p className="text-[11px] text-[#64748B] mt-1">
+                                    Listed on <a href="https://www.zotero.org/settings/keys" target="_blank" rel="noreferrer" className="text-[#4F46E5] hover:underline">zotero.org/settings/keys</a>.
                                 </p>
                             </div>
 
                             <div>
-                                <label className="text-[11px] font-medium text-slate-300 block mb-1">
-                                    Personal API Key
-                                </label>
+                                <label className="prism-label">Personal API Key</label>
                                 <Input
                                     type="password"
-                                    placeholder="Enter your Zotero API key"
+                                    placeholder="Enter Zotero API key"
                                     value={zoteroApiKey}
                                     onChange={(e) => setZoteroApiKey(e.target.value)}
-                                    className="h-9 bg-slate-950 border-slate-800 text-xs text-white font-mono"
+                                    className="font-mono text-xs"
                                     required
                                 />
-                                <p className="text-[10px] text-slate-500 mt-1">
-                                    Generate a new key with <em>Allow library access</em> on <a href="https://www.zotero.org/settings/keys/new" target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">zotero.org/settings/keys/new</a>.
-                                </p>
                             </div>
 
-                            <div className="flex justify-end gap-2 pt-2">
+                            <div className="flex justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
                                 <Button
                                     type="button"
                                     variant="outline"
+                                    size="sm"
                                     onClick={() => setShowZoteroModal(false)}
-                                    className="bg-slate-950 border-slate-800 text-slate-300 text-xs h-9"
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     type="submit"
+                                    size="sm"
                                     disabled={actionLoading}
-                                    className="bg-rose-600 hover:bg-rose-500 text-white text-xs h-9 px-4"
                                 >
                                     {actionLoading ? "Verifying..." : "Connect Library"}
                                 </Button>

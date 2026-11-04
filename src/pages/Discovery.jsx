@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { searchOpenAlex, importOpenAlexToWorkspace } from "@/services/discovery";
 import { fetchWorkspaces } from "@/services/workspace";
 import { Input } from "@/components/ui/input";
@@ -18,10 +18,6 @@ import {
     Layers,
     ChevronDown,
     ChevronUp,
-    Sparkles,
-    Building2,
-    ShieldCheck,
-    Lock,
     Globe
 } from "lucide-react";
 
@@ -51,14 +47,12 @@ export default function Discovery() {
     const [error, setError] = useState("");
     const [page, setPage] = useState(1);
 
-    // Workspace selection state for importing
     const [workspaces, setWorkspaces] = useState([]);
     const [selectedWorkspace, setSelectedWorkspace] = useState(targetWorkspaceId);
     const [importingPaperId, setImportingPaperId] = useState(null);
     const [importedSuccessIds, setImportedSuccessIds] = useState({});
     const [expandedAbstracts, setExpandedAbstracts] = useState({});
 
-    // Fetch user workspaces for the import dropdown
     useEffect(() => {
         fetchWorkspaces()
             .then(res => {
@@ -71,7 +65,6 @@ export default function Discovery() {
             .catch(() => {});
     }, []);
 
-    // Perform search
     const executeSearch = async (searchPage = 1, searchQuery = query) => {
         if (!searchQuery.trim() && !author.trim()) return;
         setLoading(true);
@@ -98,7 +91,6 @@ export default function Discovery() {
         }
     };
 
-    // Auto search if initial query exists
     useEffect(() => {
         if (initialQuery) {
             executeSearch(1, initialQuery);
@@ -139,34 +131,29 @@ export default function Discovery() {
     };
 
     return (
-        <div className="min-w-0 max-w-5xl mx-auto space-y-6 pb-12">
-            {/* Header Banner */}
-            <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-mono">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>SCHOLARLY DISCOVERY ENGINE</span>
-                        </div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                            OpenAlex Literature Explorer
+        <div className="min-w-0 space-y-5 pb-16">
+            {/* Page Header & Search Card */}
+            <div className="prism-card p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-xl font-semibold text-[#172033] tracking-tight">
+                            Literature Discovery
                         </h1>
-                        <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
-                            Search millions of open scientific papers, decoded abstracts, and citation networks. Import foundational literature directly into your private research workspaces.
+                        <p className="text-sm text-[#64748B] mt-1">
+                            Search scholarly works indexed by OpenAlex and import references directly into a research lab.
                         </p>
                     </div>
 
-                    {/* Workspace Target Selector */}
                     {workspaces.length > 0 && (
-                        <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col gap-1.5 shrink-0 min-w-[220px]">
-                            <label className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
-                                <Layers className="w-3.5 h-3.5 text-indigo-400" />
-                                <span>Target Workspace:</span>
+                        <div className="flex flex-col gap-1 shrink-0 sm:min-w-[220px]">
+                            <label className="text-xs font-medium text-[#64748B] flex items-center gap-1.5">
+                                <Layers className="w-3.5 h-3.5 text-[#4F46E5]" />
+                                <span>Import target lab</span>
                             </label>
                             <select
                                 value={selectedWorkspace}
                                 onChange={(e) => setSelectedWorkspace(e.target.value)}
-                                className="bg-slate-900 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500"
+                                className="h-9 bg-white border border-[#E2E8F0] text-xs font-medium text-[#172033] rounded-lg px-2.5 focus:outline-none focus:border-[#4F46E5]"
                             >
                                 {workspaces.map(ws => (
                                     <option key={ws._id} value={ws._id}>
@@ -178,18 +165,87 @@ export default function Discovery() {
                     )}
                 </div>
 
-                {/* Topic Presets */}
-                <div className="mt-4 pt-4 border-t border-slate-800/80 flex items-center gap-2 flex-wrap">
-                    <span className="text-[11px] text-slate-400 font-medium">Quick Topics:</span>
+                {/* Search Form */}
+                <form onSubmit={handleSearchSubmit} className="space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative flex-1">
+                            <Search className="w-4 h-4 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <Input
+                                type="text"
+                                placeholder="Search by paper title, keyword, concept, or DOI..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                className="pl-9 h-10"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                variant={showFilters ? "secondary" : "outline"}
+                                size="lg"
+                                onClick={() => setShowFilters(!showFilters)}
+                                className="flex-1 sm:flex-initial"
+                            >
+                                <Filter className="w-4 h-4" />
+                                <span>Filters</span>
+                            </Button>
+                            <Button
+                                type="submit"
+                                size="lg"
+                                disabled={loading}
+                                className="flex-1 sm:flex-initial"
+                            >
+                                {loading ? "Searching..." : "Search"}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {showFilters && (
+                        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label className="prism-label">Author Name</label>
+                                <Input
+                                    placeholder="e.g. John Martinis"
+                                    value={author}
+                                    onChange={(e) => setAuthor(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="prism-label">Publication Year</label>
+                                <Input
+                                    placeholder="e.g. 2024"
+                                    value={year}
+                                    onChange={(e) => setYear(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex items-end pb-2">
+                                <label className="flex items-center gap-2 text-xs font-medium text-[#172033] cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={isOpenAccess}
+                                        onChange={(e) => setIsOpenAccess(e.target.checked)}
+                                        className="rounded border-[#E2E8F0] text-[#4F46E5] focus:ring-[#4F46E5] w-4 h-4"
+                                    />
+                                    <span>Open Access PDFs only</span>
+                                </label>
+                            </div>
+                        </div>
+                    )}
+                </form>
+
+                {/* Preset Topics */}
+                <div className="pt-3 border-t border-[#E2E8F0] flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs text-[#64748B] mr-1">Suggested:</span>
                     {TOPIC_PRESETS.map(preset => (
                         <button
                             key={preset}
+                            type="button"
                             onClick={() => {
                                 setQuery(preset);
                                 setSearchParams({ q: preset });
                                 executeSearch(1, preset);
                             }}
-                            className="text-[11px] bg-slate-800/60 hover:bg-indigo-600/20 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 border border-slate-700/60 rounded-md px-2.5 py-1 transition"
+                            className="text-xs bg-[#F8FAFC] hover:bg-[#EEF2FF] text-[#64748B] hover:text-[#4F46E5] border border-[#E2E8F0] hover:border-indigo-200 rounded-md px-2.5 py-1 transition-colors"
                         >
                             {preset}
                         </button>
@@ -197,166 +253,98 @@ export default function Discovery() {
                 </div>
             </div>
 
-            {/* Search Input Bar */}
-            <form onSubmit={handleSearchSubmit} className="space-y-3">
-                <div className="flex gap-2">
-                    <div className="relative flex-1">
-                        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                        <Input
-                            type="text"
-                            placeholder="Search papers by keyword, concept, title, or DOI (e.g. quantum supremacy, 10.1038/s41586-019-1666-5)..."
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            className="pl-10 h-11 bg-slate-900 border-slate-800 text-white placeholder:text-slate-500 text-sm focus:border-indigo-500 rounded-xl"
-                        />
-                    </div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={`h-11 px-3.5 border-slate-800 text-slate-300 flex items-center gap-1.5 rounded-xl ${
-                            showFilters ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300' : 'bg-slate-900 hover:bg-slate-800'
-                        }`}
-                    >
-                        <Filter className="w-4 h-4" />
-                        <span className="text-xs hidden sm:inline">Filters</span>
-                    </Button>
-                    <Button
-                        type="submit"
-                        disabled={loading}
-                        className="h-11 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs sm:text-sm rounded-xl shadow-sm"
-                    >
-                        {loading ? "Searching..." : "Search"}
-                    </Button>
-                </div>
-
-                {/* Advanced Filters Expandable */}
-                {showFilters && (
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in duration-150">
-                        <div>
-                            <label className="text-[11px] font-medium text-slate-400 mb-1 block">Author Name</label>
-                            <Input
-                                placeholder="e.g. John Martinis"
-                                value={author}
-                                onChange={(e) => setAuthor(e.target.value)}
-                                className="h-9 bg-slate-950 border-slate-800 text-xs text-white"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[11px] font-medium text-slate-400 mb-1 block">Publication Year</label>
-                            <Input
-                                placeholder="e.g. 2024"
-                                value={year}
-                                onChange={(e) => setYear(e.target.value)}
-                                className="h-9 bg-slate-950 border-slate-800 text-xs text-white"
-                            />
-                        </div>
-                        <div className="flex items-center pt-5">
-                            <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={isOpenAccess}
-                                    onChange={(e) => setIsOpenAccess(e.target.checked)}
-                                    className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-0 w-4 h-4"
-                                />
-                                <span className="font-medium">Open Access PDFs Only</span>
-                            </label>
-                        </div>
-                    </div>
-                )}
-            </form>
-
-            {/* Error Message */}
             {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-xs">
+                <div className="p-3.5 bg-[#FEF2F2] border border-red-200 rounded-lg text-[#DC2626] text-xs font-medium">
                     {error}
                 </div>
             )}
 
-            {/* Search Results Metadata */}
             {meta && (
-                <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+                <div className="flex items-center justify-between text-xs text-[#64748B] px-1">
                     <span>
-                        Showing <strong className="text-white">{results.length}</strong> of{" "}
-                        <strong className="text-white">{meta.count?.toLocaleString() || 0}</strong> scholarly works
+                        Showing <strong className="text-[#172033]">{results.length}</strong> of{" "}
+                        <strong className="text-[#172033]">{meta.count?.toLocaleString() || 0}</strong> scholarly works
                     </span>
                     <span>Page {page}</span>
                 </div>
             )}
 
-            {/* Paper Cards List */}
-            {results.length > 0 ? (
-                <div className="space-y-4">
+            {/* Results */}
+            {loading ? (
+                <div className="prism-card p-12 text-center space-y-2.5">
+                    <div className="w-6 h-6 border-2 border-[#4F46E5] border-t-transparent rounded-full animate-spin mx-auto" />
+                    <p className="text-xs text-[#64748B]">Searching OpenAlex scholarly index...</p>
+                </div>
+            ) : results.length > 0 ? (
+                <div className="space-y-3">
                     {results.map((paper) => {
                         const isImported = importedSuccessIds[paper.id];
                         const isImporting = importingPaperId === paper.id;
                         const isExpanded = expandedAbstracts[paper.id];
 
                         return (
-                            <div
+                            <article
                                 key={paper.id || paper.doi}
-                                className="bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-5 transition shadow-sm space-y-3"
+                                className="prism-card p-5 hover:border-slate-300 transition-colors space-y-3"
                             >
-                                {/* Top Meta Row: Venue, Year, Open Access */}
+                                {/* Meta & Actions */}
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                                    <div className="flex items-center gap-2 flex-wrap">
+                                    <div className="flex items-center gap-2 flex-wrap text-xs text-[#64748B]">
                                         {paper.venue && (
-                                            <span className="text-[11px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded">
+                                            <span className="font-medium text-[#4F46E5] bg-[#EEF2FF] border border-indigo-200/80 px-2 py-0.5 rounded">
                                                 {paper.venue}
                                             </span>
                                         )}
                                         {paper.publicationYear && (
-                                            <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="w-3.5 h-3.5" />
                                                 {paper.publicationYear}
                                             </span>
                                         )}
                                         {paper.isOpenAccess && (
-                                            <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                            <span className="text-[11px] font-medium text-[#15803D] bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded flex items-center gap-1">
                                                 <Globe className="w-3 h-3" />
-                                                OPEN ACCESS
+                                                Open Access
                                             </span>
                                         )}
-                                        <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                                            <Award className="w-3 h-3 text-amber-400" />
+                                        <span className="flex items-center gap-1">
+                                            <Award className="w-3.5 h-3.5 text-[#D97706]" />
                                             {paper.citedByCount?.toLocaleString() || 0} citations
                                         </span>
                                     </div>
 
-                                    {/* Action Buttons */}
                                     <div className="flex items-center gap-2">
                                         {paper.pdfUrl && (
-                                            <a
-                                                href={paper.pdfUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="px-2.5 py-1 text-xs font-medium text-indigo-300 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 rounded-lg flex items-center gap-1 transition"
-                                            >
-                                                <FileText className="w-3.5 h-3.5" />
-                                                <span>PDF</span>
-                                            </a>
+                                            <Button asChild variant="outline" size="sm">
+                                                <a
+                                                    href={paper.pdfUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <FileText className="w-3.5 h-3.5 text-[#4F46E5]" />
+                                                    <span>PDF</span>
+                                                </a>
+                                            </Button>
                                         )}
                                         {selectedWorkspace && (
                                             <Button
+                                                size="sm"
+                                                variant={isImported ? "outline" : "default"}
                                                 onClick={() => handleImportToWorkspace(paper)}
                                                 disabled={isImported || isImporting}
-                                                className={`text-xs h-7 px-3 rounded-lg flex items-center gap-1.5 ${
-                                                    isImported
-                                                        ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
-                                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                                                }`}
+                                                className={isImported ? "text-[#15803D] border-emerald-200 bg-emerald-50" : ""}
                                             >
                                                 {isImported ? (
                                                     <>
-                                                        <Check className="w-3 h-3" />
-                                                        <span>In Workspace</span>
+                                                        <Check className="w-3.5 h-3.5" />
+                                                        <span>In Lab</span>
                                                     </>
                                                 ) : isImporting ? (
                                                     <span>Importing...</span>
                                                 ) : (
                                                     <>
-                                                        <Plus className="w-3 h-3" />
-                                                        <span>Add to Literature</span>
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                        <span>Add to Lab</span>
                                                     </>
                                                 )}
                                             </Button>
@@ -370,57 +358,58 @@ export default function Discovery() {
                                         href={paper.landingPageUrl || paper.pdfUrl || `https://doi.org/${paper.doi}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-base sm:text-lg font-bold text-white hover:text-indigo-400 transition inline-flex items-baseline gap-1.5 group"
+                                        className="text-base font-semibold text-[#172033] hover:text-[#4F46E5] transition-colors inline-flex items-baseline gap-1.5 group"
                                     >
                                         <span>{paper.title}</span>
-                                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400 shrink-0" />
+                                        <ExternalLink className="w-3.5 h-3.5 text-[#64748B] group-hover:text-[#4F46E5] shrink-0" />
                                     </a>
                                 </div>
 
                                 {/* Authors */}
                                 {paper.authorNames && (
-                                    <p className="text-xs text-slate-400 flex items-center gap-1.5">
-                                        <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                    <p className="text-xs text-[#64748B] flex items-center gap-1.5">
+                                        <Users className="w-3.5 h-3.5 shrink-0" />
                                         <span className="truncate">{paper.authorNames}</span>
                                     </p>
                                 )}
 
-                                {/* Abstract preview & toggle */}
+                                {/* Abstract */}
                                 {paper.abstract ? (
                                     <div className="space-y-1.5">
-                                        <p className={`text-xs text-slate-300 leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
+                                        <p className={`text-sm text-[#64748B] leading-relaxed ${isExpanded ? "" : "line-clamp-2"}`}>
                                             {paper.abstract}
                                         </p>
                                         <button
+                                            type="button"
                                             onClick={() => toggleAbstract(paper.id)}
-                                            className="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium inline-flex items-center gap-1"
+                                            className="text-xs text-[#4F46E5] hover:text-[#4338CA] font-medium inline-flex items-center gap-1"
                                         >
                                             {isExpanded ? (
                                                 <>
-                                                    <span>Collapse Abstract</span>
-                                                    <ChevronUp className="w-3 h-3" />
+                                                    <span>Collapse abstract</span>
+                                                    <ChevronUp className="w-3.5 h-3.5" />
                                                 </>
                                             ) : (
                                                 <>
-                                                    <span>Read Full Abstract</span>
-                                                    <ChevronDown className="w-3 h-3" />
+                                                    <span>Read full abstract</span>
+                                                    <ChevronDown className="w-3.5 h-3.5" />
                                                 </>
                                             )}
                                         </button>
                                     </div>
                                 ) : (
-                                    <p className="text-[11px] text-slate-500 italic">
-                                        Full abstract not indexed by OpenAlex. View paper landing page for details.
+                                    <p className="text-xs text-[#64748B] italic">
+                                        Abstract not indexed. Open the publication page for full text.
                                     </p>
                                 )}
 
-                                {/* Concepts Tags & DOI */}
-                                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap">
+                                {/* Concepts & DOI */}
+                                <div className="pt-2.5 border-t border-[#E2E8F0] flex items-center justify-between gap-2 flex-wrap">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         {(paper.concepts || []).slice(0, 4).map(concept => (
                                             <span
                                                 key={concept.id}
-                                                className="text-[10px] bg-slate-800/80 text-slate-300 px-2 py-0.5 rounded border border-slate-700/60"
+                                                className="text-xs bg-[#F8FAFC] text-[#64748B] px-2 py-0.5 rounded border border-[#E2E8F0]"
                                             >
                                                 {concept.name}
                                             </span>
@@ -428,45 +417,57 @@ export default function Discovery() {
                                     </div>
 
                                     {paper.doi && (
-                                        <span className="text-[10px] font-mono text-slate-400">
+                                        <span className="text-[11px] font-mono text-[#64748B]">
                                             DOI: {paper.doi}
                                         </span>
                                     )}
                                 </div>
-                            </div>
+                            </article>
                         );
                     })}
 
                     {/* Pagination */}
-                    <div className="flex justify-between items-center pt-4">
+                    <div className="flex justify-between items-center pt-3">
                         <Button
                             variant="outline"
+                            size="sm"
                             disabled={page <= 1 || loading}
                             onClick={() => executeSearch(page - 1)}
-                            className="bg-slate-900 border-slate-800 text-slate-300 text-xs h-9"
                         >
                             Previous Page
                         </Button>
-                        <span className="text-xs text-slate-400">Page {page}</span>
+                        <span className="text-xs text-[#64748B]">Page {page}</span>
                         <Button
                             variant="outline"
+                            size="sm"
                             disabled={loading || results.length < 10}
                             onClick={() => executeSearch(page + 1)}
-                            className="bg-slate-900 border-slate-800 text-slate-300 text-xs h-9"
                         >
                             Next Page
                         </Button>
                     </div>
                 </div>
             ) : !loading && query ? (
-                <div className="text-center py-16 bg-slate-900/40 rounded-2xl border border-dashed border-slate-800 p-8">
-                    <BookOpen className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                    <h3 className="text-sm font-semibold text-white">No scholarly papers found</h3>
-                    <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
-                        Try broadening your keywords, removing quotation marks, or searching by author surname.
+                <div className="prism-card p-12 text-center space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center mx-auto">
+                        <BookOpen className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-[#172033]">No scholarly papers found</h3>
+                    <p className="text-xs text-[#64748B] max-w-sm mx-auto">
+                        Broaden your search keywords or filter by author surname.
                     </p>
                 </div>
-            ) : null}
+            ) : (
+                <div className="prism-card p-12 text-center space-y-2">
+                    <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center mx-auto">
+                        <BookOpen className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-[#172033]">Explore Peer-Reviewed Literature</h3>
+                    <p className="text-xs text-[#64748B] max-w-md mx-auto">
+                        Enter a research topic, paper title, or DOI above, or pick one of the suggested topics to begin exploring.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }

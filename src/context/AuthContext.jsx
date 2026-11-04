@@ -1,4 +1,5 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useState } from "react";
+import { updateSocketAuth, disconnectSocket } from "@/services/socket";
 
 export const AuthContext = createContext(null);
 
@@ -7,23 +8,25 @@ export const AuthProvider = ({ children }) => {
         try {
             const token = localStorage.getItem("token");
             const userData = localStorage.getItem("user");
-            return (token && userData) ? JSON.parse(userData) : null;
+            return token && userData ? JSON.parse(userData) : null;
         } catch {
             return null;
         }
     });
-    const [loading, setLoading] = useState(false);
+    const [loading] = useState(false);
 
     const login = (userInfo) => {
+        localStorage.setItem("token", userInfo.token);
+        localStorage.setItem("user", JSON.stringify(userInfo.user));
+        updateSocketAuth(userInfo.token);
         setUser(userInfo.user);
-        localStorage.setItem('token', userInfo.token);
-        localStorage.setItem('user', JSON.stringify(userInfo.user));
     };
 
     const logout = () => {
+        disconnectSocket();
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
         setUser(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
     };
 
     return (

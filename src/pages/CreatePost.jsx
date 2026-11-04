@@ -1,34 +1,31 @@
 import { useEffect, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { createPost, uploadPostAttachment } from "@/services/post";
+import { API_BASE_URL } from "@/services/config";
 import { useNavigate } from "react-router-dom";
-import { 
-  FlaskConical, 
-  HelpCircle, 
-  Users, 
-  Sparkles, 
-  GraduationCap, 
-  Bell, 
-  ArrowLeft, 
-  Send, 
-  Tag, 
-  FileText, 
-  Image as ImageIcon, 
-  Paperclip, 
-  X, 
-  Loader2, 
-  FileCheck2,
-  FileSpreadsheet
+import {
+    ArrowLeft,
+    FileText,
+    Paperclip,
+    X,
+    Loader2
 } from "lucide-react";
 
 const POST_TYPES = [
-    { id: "research", label: "Peer Research Discussion", icon: FlaskConical, desc: "Analyze papers, theories, or experimental observations" },
-    { id: "question", label: "Open Research Question", icon: HelpCircle, desc: "Pose a theoretical, mathematical, or empirical inquiry" },
-    { id: "collaboration", label: "Collaboration Call", icon: Users, desc: "Seek co-authors, laboratory partners, or advisors" },
-    { id: "showcase", label: "Project & Preprint Showcase", icon: Sparkles, desc: "Demonstrate a working prototype, dataset, or preprint" },
-    { id: "study", label: "Replication Study & Methodology", icon: GraduationCap, desc: "Share literature surveys, notes, and reproducible recipes" },
-    { id: "announcement", label: "Academic Announcement", icon: Bell, desc: "Calls for papers, conference dates, or lab openings" }
+    { id: "research", label: "Peer Research Discussion", desc: "Analyze papers, theories, or experimental observations." },
+    { id: "question", label: "Open Research Question", desc: "Pose a theoretical, mathematical, or empirical inquiry." },
+    { id: "collaboration", label: "Collaboration Call", desc: "Find co-authors, laboratory partners, or academic advisors." },
+    { id: "showcase", label: "Preprint & Project Showcase", desc: "Share a working prototype, benchmark dataset, or preprint." },
+    { id: "study", label: "Replication & Methodology", desc: "Document literature surveys, protocols, and reproducible runs." },
+    { id: "announcement", label: "Academic Announcement", desc: "Share calls for papers, symposium dates, or lab openings." }
 ];
 
 const CreatePost = () => {
@@ -36,16 +33,20 @@ const CreatePost = () => {
     const fileInputRef = useRef(null);
 
     const [title, setTitle] = useState(() => {
-        const draft = localStorage.getItem('post-draft');
+        const draft = localStorage.getItem("post-draft");
         if (!draft) return "";
         try { return JSON.parse(draft).title || ""; } catch { return ""; }
     });
     const [content, setContent] = useState(() => {
-        const draft = localStorage.getItem('post-draft');
+        const draft = localStorage.getItem("post-draft");
         if (!draft) return "";
         try { return JSON.parse(draft).content || ""; } catch { return ""; }
     });
-    const [postType, setPostType] = useState("research");
+    const [postType, setPostType] = useState(() => {
+        const draft = localStorage.getItem("post-draft");
+        if (!draft) return "research";
+        try { return JSON.parse(draft).postType || "research"; } catch { return "research"; }
+    });
     const [tags, setTags] = useState("");
     const [doi, setDoi] = useState("");
     const [attachments, setAttachments] = useState([]);
@@ -57,7 +58,7 @@ const CreatePost = () => {
     useEffect(() => {
         const interval = setInterval(() => {
             if (title || content || postType) {
-                localStorage.setItem('post-draft', JSON.stringify({ title, content, postType }));
+                localStorage.setItem("post-draft", JSON.stringify({ title, content, postType }));
             }
         }, 15000);
         return () => clearInterval(interval);
@@ -65,9 +66,15 @@ const CreatePost = () => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!title.trim() || title.trim().length < 5) newErrors.title = "Title must be at least 5 characters";
-        if (!content.trim() || content.trim().length < 20) newErrors.content = "Content must be at least 20 characters";
-        if (!postType) newErrors.postType = "Please select a post type";
+        if (!title.trim() || title.trim().length < 5) {
+            newErrors.title = "Title must be at least 5 characters.";
+        }
+        if (!content.trim() || content.trim().length < 20) {
+            newErrors.content = "Description must be at least 20 characters.";
+        }
+        if (!postType) {
+            newErrors.postType = "Please select a category.";
+        }
         return newErrors;
     };
 
@@ -80,10 +87,12 @@ const CreatePost = () => {
         try {
             for (const file of files) {
                 const uploaded = await uploadPostAttachment(file);
-                setAttachments(prev => [...prev, uploaded]);
+                if (uploaded) {
+                    setAttachments(prev => [...prev, uploaded]);
+                }
             }
         } catch (err) {
-            setErrorMessage(err.message || "Failed to upload file");
+            setErrorMessage(err.message || "Failed to upload attachment");
         } finally {
             setUploadingFile(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -106,7 +115,7 @@ const CreatePost = () => {
         try {
             const tagArray = tags
                 .split(",")
-                .map(t => t.trim().replace(/^#/, ''))
+                .map(t => t.trim().replace(/^#/, ""))
                 .filter(Boolean);
 
             const postData = {
@@ -119,15 +128,15 @@ const CreatePost = () => {
             };
 
             const response = await createPost(postData);
-            localStorage.removeItem('post-draft');
+            localStorage.removeItem("post-draft");
 
             if (response?.data?._id) {
                 navigate(`/post/${response.data._id}`);
             } else {
-                navigate('/feed');
+                navigate("/feed");
             }
         } catch (err) {
-            setErrorMessage(err.message || "Failed to publish research proposal");
+            setErrorMessage(err.message || "Failed to publish post");
         } finally {
             setSubmitting(false);
         }
@@ -141,182 +150,200 @@ const CreatePost = () => {
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
     };
 
+    const selectedCategory = POST_TYPES.find(t => t.id === postType) || POST_TYPES[0];
+
+    const resolveAttachmentUrl = (url) => {
+        if (!url) return "";
+        return url.startsWith("http") ? url : `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+    };
+
     return (
-        <div className="space-y-6 pb-20 max-w-3xl mx-auto">
-            {/* Top Navigation */}
-            <div className="flex items-center justify-between">
+        <div className="max-w-3xl mx-auto space-y-4 pb-16">
+            {/* Back Link */}
+            <div>
                 <button
-                    onClick={() => navigate('/feed')}
-                    className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition"
+                    type="button"
+                    onClick={() => navigate("/feed")}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B] hover:text-[#172033] transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Knowledge Feed</span>
+                    <span>Back to Feed</span>
                 </button>
             </div>
 
-            {/* Main Form Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
-                <div>
-                    <h1 className="text-xl font-bold text-white tracking-tight">
-                        Publish Scientific Inquiry or Preprint
+            {/* Clean White Form Surface */}
+            <div className="prism-card p-6 sm:p-7 space-y-6">
+                <div className="border-b border-[#E2E8F0] pb-4">
+                    <h1 className="text-lg sm:text-xl font-semibold text-[#172033] tracking-tight">
+                        Create Research Post
                     </h1>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Share theoretical hypotheses, experimental findings, preprint figures, or calls for peer replication.
+                    <p className="text-sm text-[#64748B] mt-1">
+                        Publish a research question, preprint summary, methodology note, or call for collaborators.
                     </p>
                 </div>
 
                 {errorMessage && (
-                    <div className="p-3 bg-red-950/60 border border-red-500/30 text-red-300 text-xs rounded-xl">
+                    <div className="p-3 rounded-lg bg-[#FEF2F2] border border-red-200 text-[#DC2626] text-xs font-medium">
                         {errorMessage}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Post Type Selector */}
-                    <div>
-                        <label className="block text-xs font-mono text-slate-300 uppercase mb-2">
-                            Select Research Category
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {POST_TYPES.map((type) => {
-                                const Icon = type.icon;
-                                const isSelected = postType === type.id;
-                                return (
-                                    <button
-                                        key={type.id}
-                                        type="button"
-                                        onClick={() => setPostType(type.id)}
-                                        className={`p-3 rounded-xl border text-left transition flex items-start gap-3 ${
-                                            isSelected
-                                                ? 'bg-indigo-950/70 border-indigo-500/50 shadow-sm'
-                                                : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-950 hover:border-slate-700'
-                                        }`}
-                                    >
-                                        <div className={`p-2 rounded-lg shrink-0 ${
-                                            isSelected ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-900 text-slate-400'
-                                        }`}>
-                                            <Icon className="w-4 h-4" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-white' : 'text-slate-200'}`}>
-                                                {type.label}
-                                            </p>
-                                            <p className="text-[11px] text-slate-400 line-clamp-1 mt-1">
-                                                {type.desc}
-                                            </p>
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Compact Category & Optional DOI Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="prism-label">Category</label>
+                            <Select value={postType} onValueChange={setPostType}>
+                                <SelectTrigger className="h-10">
+                                    <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {POST_TYPES.map((type) => (
+                                        <SelectItem key={type.id} value={type.id}>
+                                            {type.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-[#64748B] mt-1">
+                                {selectedCategory.desc}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="prism-label">
+                                Paper DOI or arXiv ID <span className="text-[#64748B] font-normal">(Optional)</span>
+                            </label>
+                            <Input
+                                placeholder="e.g. 10.1103/PhysRevA.109.022401"
+                                value={doi}
+                                onChange={(e) => setDoi(e.target.value)}
+                                className="h-10 font-mono text-xs"
+                            />
+                            <p className="text-xs text-[#64748B] mt-1">
+                                Links directly to the source publication.
+                            </p>
                         </div>
                     </div>
 
-                    {/* Proposal Title */}
+                    {/* Title */}
                     <div>
-                        <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
-                            Research Title / Core Inquiry
-                        </label>
+                        <label className="prism-label">Title</label>
                         <Input
-                            placeholder="e.g. Can Multi-Paxos match Raft's operational simplicity without tail latency spikes?"
+                            placeholder="Summarize your research question, finding, or proposal..."
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="bg-slate-950 border-slate-800 text-slate-100 text-sm h-11 focus:border-indigo-500"
+                            className="h-10"
                             required
                         />
-                        {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title}</p>}
+                        {errors.title && (
+                            <p className="text-xs text-[#DC2626] mt-1">{errors.title}</p>
+                        )}
                     </div>
 
-                    {/* Technical Abstract / Content */}
+                    {/* Description */}
                     <div>
-                        <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
-                            Methodology, Evidence & Inquiries
-                        </label>
+                        <label className="prism-label">Description & Methodology</label>
                         <textarea
                             rows={6}
-                            placeholder="Detail your theoretical foundation, observations, mathematical formulation, or specific advice needed from peer researchers..."
+                            placeholder="Outline theoretical context, experimental observations, parameters, or open questions for peer review..."
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 focus:border-indigo-500 outline-none leading-relaxed"
+                            className="prism-textarea min-h-[150px] resize-y leading-relaxed"
                             required
                         />
-                        {errors.content && <p className="text-xs text-red-400 mt-1">{errors.content}</p>}
+                        {errors.content && (
+                            <p className="text-xs text-[#DC2626] mt-1">{errors.content}</p>
+                        )}
                     </div>
 
-                    {/* Research Attachments: Figures, Charts, Datasets, PDFs */}
+                    {/* Topics */}
+                    <div>
+                        <label className="prism-label">
+                            Topics <span className="text-[#64748B] font-normal">(Comma-separated)</span>
+                        </label>
+                        <Input
+                            placeholder="e.g. Quantum, Surface Codes, Algorithms"
+                            value={tags}
+                            onChange={(e) => setTags(e.target.value)}
+                            className="h-10"
+                        />
+                    </div>
+
+                    {/* Attachments */}
                     <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <label className="block text-xs font-mono text-slate-300 uppercase">
-                                Research Figures, Diagrams & Documents
-                            </label>
-                            <span className="text-[11px] text-slate-500 font-mono">PNG, JPG, SVG, PDF, CSV up to 25MB</span>
+                        <label className="prism-label mb-0">Figures & Supporting Documents</label>
+
+                        <div className="rounded-lg border border-dashed border-slate-300 bg-[#F8FAFC] px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="text-xs text-[#64748B]">
+                                Attach figures, charts, PDFs, or CSV datasets (up to 25 MB).
+                            </div>
+                            <div>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileUpload}
+                                    multiple
+                                    accept="image/*,.pdf,.csv,.json,.doc,.docx"
+                                    className="hidden"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={uploadingFile}
+                                >
+                                    {uploadingFile ? (
+                                        <>
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#4F46E5]" />
+                                            <span>Uploading...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Paperclip className="w-3.5 h-3.5 text-[#64748B]" />
+                                            <span>Attach Files</span>
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
                         </div>
 
-                        {/* File Upload Trigger */}
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileUpload}
-                                multiple
-                                accept="image/*,.pdf,.csv,.json,.doc,.docx"
-                                className="hidden"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={uploadingFile}
-                                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition text-xs font-medium"
-                            >
-                                {uploadingFile ? (
-                                    <>
-                                        <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
-                                        <span>Uploading...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
-                                        <span>Attach Figures & Papers</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-
-                        {/* Attachments Preview Grid */}
                         {attachments.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                 {attachments.map((att, idx) => (
                                     <div
                                         key={idx}
-                                        className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 relative group overflow-hidden"
+                                        className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-[#E2E8F0]"
                                     >
-                                        {att.type === "image" ? (
+                                        {att.type === "image" || att.mimeType?.startsWith("image/") ? (
                                             <img
-                                                src={att.url}
+                                                src={resolveAttachmentUrl(att.url)}
                                                 alt={att.originalName}
-                                                className="w-12 h-12 rounded-lg object-cover bg-slate-900 border border-slate-800 shrink-0"
+                                                className="w-10 h-10 rounded-md object-cover bg-[#F8FAFC] border border-[#E2E8F0] shrink-0"
                                             />
                                         ) : (
-                                            <div className="w-12 h-12 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-                                                <FileText className="w-5 h-5" />
+                                            <div className="w-10 h-10 rounded-md bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5] shrink-0">
+                                                <FileText className="w-4 h-4" />
                                             </div>
                                         )}
 
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-medium text-slate-200 truncate">
+                                            <p className="text-xs font-medium text-[#172033] truncate">
                                                 {att.originalName}
                                             </p>
-                                            <p className="text-[10px] font-mono text-slate-500 mt-0.5">
-                                                {formatFileSize(att.size)} • {att.type.toUpperCase()}
+                                            <p className="text-[11px] text-[#64748B]">
+                                                {formatFileSize(att.size)}
                                             </p>
                                         </div>
 
                                         <button
                                             type="button"
                                             onClick={() => handleRemoveAttachment(idx)}
-                                            className="p-1 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-900 transition shrink-0"
+                                            className="p-1 rounded-md text-[#64748B] hover:text-[#DC2626] hover:bg-red-50 transition-colors shrink-0"
                                             title="Remove attachment"
                                         >
-                                            <X className="w-3.5 h-3.5" />
+                                            <X className="w-4 h-4" />
                                         </button>
                                     </div>
                                 ))}
@@ -324,50 +351,27 @@ const CreatePost = () => {
                         )}
                     </div>
 
-                    {/* DOI & Topic Tags */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
-                                Primary Paper DOI / arXiv ID (Optional)
-                            </label>
-                            <Input
-                                placeholder="10.1103/PhysRevA.109.022401"
-                                value={doi}
-                                onChange={(e) => setDoi(e.target.value)}
-                                className="bg-slate-950 border-slate-800 text-slate-100 font-mono text-xs sm:text-sm"
-                            />
-                        </div>
+                    {/* Action Footer */}
+                    <div className="flex items-center justify-between gap-3 pt-4 border-t border-[#E2E8F0]">
+                        <span className="text-xs text-[#64748B]">
+                            {title || content ? "Draft auto-saved locally" : "Visible to the Prism research community"}
+                        </span>
 
-                        <div>
-                            <label className="block text-xs font-mono text-slate-300 uppercase mb-1.5">
-                                Discipline Tags (Comma-separated)
-                            </label>
-                            <Input
-                                placeholder="Quantum, Algorithms, NISQ..."
-                                value={tags}
-                                onChange={(e) => setTags(e.target.value)}
-                                className="bg-slate-950 border-slate-800 text-slate-100 font-mono text-xs sm:text-sm"
-                            />
+                        <div className="flex items-center gap-2.5">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => navigate("/feed")}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={submitting || uploadingFile}
+                            >
+                                {submitting ? "Publishing..." : "Publish Post"}
+                            </Button>
                         </div>
-                    </div>
-
-                    {/* Submit Bar */}
-                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => navigate('/feed')}
-                            className="text-xs text-slate-400 hover:text-white"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={submitting || uploadingFile}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white px-5"
-                        >
-                            {submitting ? "Publishing..." : "Publish Discussion"}
-                        </Button>
                     </div>
                 </form>
             </div>

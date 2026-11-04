@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
     MessageSquare,
     Send,
-    ArrowUpDown,
     AlertCircle,
     Loader2
 } from "lucide-react";
@@ -24,7 +23,6 @@ export default function ThreadedComments({ postId, currentUser }) {
     const [error, setError] = useState("");
     const [sort, setSort] = useState("best");
 
-    // Top-level composer
     const [newComment, setNewComment] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
@@ -50,11 +48,16 @@ export default function ThreadedComments({ postId, currentUser }) {
         }
     }, [postId, sort]);
 
-    // Real-Time Socket.IO Live Comments & Vote Updates
     useEffect(() => {
         if (!postId) return;
         const socket = getSocket();
-        socket.emit("join_post", { postId });
+        const joinPost = () => {
+            socket.emit("join_post", { postId });
+        };
+        if (socket.connected) {
+            joinPost();
+        }
+        socket.on("connect", joinPost);
 
         const handleRealtimeComment = ({ postId: targetPostId, comment }) => {
             if (targetPostId === postId) {
@@ -78,13 +81,15 @@ export default function ThreadedComments({ postId, currentUser }) {
         socket.on("comment_vote_updated", handleCommentVote);
 
         return () => {
-            socket.emit("leave_post", { postId });
+            if (socket.connected) {
+                socket.emit("leave_post", { postId });
+            }
+            socket.off("connect", joinPost);
             socket.off("new_comment", handleRealtimeComment);
             socket.off("comment_vote_updated", handleCommentVote);
         };
     }, [postId]);
 
-    // Top-Level Comment Submission
     const handleTopLevelSubmit = async (e) => {
         e.preventDefault();
         if (!newComment.trim()) return;
@@ -104,7 +109,6 @@ export default function ThreadedComments({ postId, currentUser }) {
         }
     };
 
-    // Recursive helper to update an item in the tree
     const updateNodeInTree = (nodes, targetId, updateFn) => {
         return nodes.map(node => {
             if (node._id.toString() === targetId.toString()) {
@@ -120,7 +124,6 @@ export default function ThreadedComments({ postId, currentUser }) {
         });
     };
 
-    // Recursive helper to append child reply
     const appendReplyInTree = (nodes, parentId, newReply) => {
         return nodes.map(node => {
             if (node._id.toString() === parentId.toString()) {
@@ -139,14 +142,12 @@ export default function ThreadedComments({ postId, currentUser }) {
         });
     };
 
-    // 1. Upvote Comment
     const handleUpvote = async (commentId) => {
         if (!currentUser) {
             alert("Please sign in to upvote comments");
             return;
         }
 
-        // Optimistic UI update
         setComments(prev => updateNodeInTree(prev, commentId, node => {
             const nextHasUpvoted = !node.hasUpvoted;
             return {
@@ -165,8 +166,7 @@ export default function ThreadedComments({ postId, currentUser }) {
                     upvoteCount: res.data.upvoteCount
                 })));
             }
-        } catch (err) {
-            // Rollback
+        } catch {
             setComments(prev => updateNodeInTree(prev, commentId, node => {
                 const revertHasUpvoted = !node.hasUpvoted;
                 return {
@@ -178,7 +178,6 @@ export default function ThreadedComments({ postId, currentUser }) {
         }
     };
 
-    // 2. Reply to Child Comment
     const handleReplySubmit = async (parentId, text) => {
         const res = await createComment(postId, text, parentId);
         if (res.success && res.data) {
@@ -187,7 +186,6 @@ export default function ThreadedComments({ postId, currentUser }) {
         }
     };
 
-    // 3. Edit Comment
     const handleEditSubmit = async (commentId, newContent) => {
         const res = await editComment(commentId, newContent);
         if (res.success && res.data) {
@@ -199,7 +197,6 @@ export default function ThreadedComments({ postId, currentUser }) {
         }
     };
 
-    // 4. Delete Comment
     const handleDeleteSubmit = async (commentId) => {
         const res = await deleteComment(commentId);
         if (res.success) {
@@ -217,19 +214,19 @@ export default function ThreadedComments({ postId, currentUser }) {
     };
 
     return (
-        <section className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-5">
-            {/* Header & Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <section className="prism-card p-5 sm:p-6 space-y-5">
+            {/* Header & Sort */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
                 <div className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-indigo-600" />
-                    <h3 className="text-sm font-bold text-slate-900">
-                        Peer Discussion & Inquiries ({totalCount})
-                    </h3>
+                    <MessageSquare className="w-4 h-4 text-[#4F46E5]" />
+                    <h2 className="text-base font-semibold text-[#172033]">
+                        Peer Discussion ({totalCount})
+                    </h2>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">Sort by:</span>
-                    <div className="inline-flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 text-xs">
+                    <span className="text-xs text-[#64748B]">Sort:</span>
+                    <div className="inline-flex items-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-0.5 text-xs">
                         {[
                             { id: "best", label: "Best" },
                             { id: "newest", label: "Newest" },
@@ -237,11 +234,12 @@ export default function ThreadedComments({ postId, currentUser }) {
                         ].map(s => (
                             <button
                                 key={s.id}
+                                type="button"
                                 onClick={() => setSort(s.id)}
-                                className={`px-2.5 py-1 rounded-md transition font-medium ${
+                                className={`px-2.5 py-1 rounded-md transition-colors ${
                                     sort === s.id
-                                        ? "bg-white text-indigo-700 shadow-2xs font-semibold"
-                                        : "text-slate-600 hover:text-slate-900"
+                                        ? "bg-white text-[#4F46E5] font-medium shadow-sm"
+                                        : "text-[#64748B] hover:text-[#172033]"
                                 }`}
                             >
                                 {s.label}
@@ -251,61 +249,58 @@ export default function ThreadedComments({ postId, currentUser }) {
                 </div>
             </div>
 
-            {/* Error Message */}
             {error && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <div className="p-3 bg-[#FEF2F2] border border-red-200 text-[#DC2626] text-xs rounded-lg flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{error}</span>
                 </div>
             )}
 
-            {/* Top-Level Composer */}
+            {/* Comment Composer */}
             {currentUser ? (
-                <form onSubmit={handleTopLevelSubmit} className="space-y-2">
-                    <div className="relative">
-                        <textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            rows={3}
-                            placeholder="Contribute constructive peer analysis, critique, or inquiry..."
-                            className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 rounded-xl p-3 text-xs sm:text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none transition resize-none leading-relaxed shadow-2xs"
-                            required
-                        />
-                    </div>
-                    <div className="flex justify-between items-center pt-1">
-                        <p className="text-[11px] text-slate-400">
-                            Academic etiquette: Focus on methodological rigor and reproducibility.
-                        </p>
+                <form onSubmit={handleTopLevelSubmit} className="space-y-2.5">
+                    <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        rows={3}
+                        placeholder="Add peer feedback, methodology questions, or related citations..."
+                        className="prism-textarea resize-y leading-relaxed"
+                        required
+                    />
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs text-[#64748B]">
+                            Focus on constructive analysis and reproducibility.
+                        </span>
                         <Button
                             type="submit"
+                            size="sm"
                             disabled={submitting || !newComment.trim()}
-                            className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3.5 rounded-lg font-medium shadow-2xs flex items-center gap-1.5"
                         >
                             <Send className="w-3.5 h-3.5" />
-                            <span>{submitting ? "Posting..." : "Comment"}</span>
+                            <span>{submitting ? "Posting..." : "Post Comment"}</span>
                         </Button>
                     </div>
                 </form>
             ) : (
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center text-xs text-slate-600">
-                    <span>Sign in to participate in threaded peer discussions.</span>
+                <div className="p-4 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0] text-center text-xs text-[#64748B]">
+                    Sign in to participate in peer discussions.
                 </div>
             )}
 
-            {/* Threaded Comments Tree */}
-            <div className="pt-2">
+            {/* Discussion Tree */}
+            <div className="pt-1">
                 {loading ? (
                     <div className="py-8 text-center space-y-2">
-                        <Loader2 className="w-5 h-5 text-indigo-600 animate-spin mx-auto" />
-                        <p className="text-xs text-slate-400">Loading threaded discussion tree...</p>
+                        <Loader2 className="w-5 h-5 text-[#4F46E5] animate-spin mx-auto" />
+                        <p className="text-xs text-[#64748B]">Loading discussion...</p>
                     </div>
                 ) : comments.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-slate-400 space-y-1">
-                        <p className="font-medium text-slate-600">No peer responses yet.</p>
-                        <p>Be the first to analyze this research finding or inquiry.</p>
+                    <div className="py-8 text-center text-xs text-[#64748B] space-y-1">
+                        <p className="font-medium text-[#172033]">No responses yet</p>
+                        <p>Start the peer discussion above.</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-[#E2E8F0]">
                         {comments.map((comment) => (
                             <CommentNode
                                 key={comment._id}

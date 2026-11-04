@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
     ChevronUp,
     Reply,
@@ -99,7 +100,7 @@ export default function CommentNode({
                         href={part}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-indigo-600 underline font-medium hover:text-indigo-800 break-all"
+                        className="text-[#4F46E5] underline font-medium hover:text-[#4338CA] break-all"
                     >
                         {part} <ExternalLink className="w-2.5 h-2.5 inline" />
                     </a>
@@ -123,129 +124,113 @@ export default function CommentNode({
     };
 
     return (
-        <div id={`comment-${comment._id}`} className={`relative ${depth > 0 ? "mt-2.5 pl-3 sm:pl-4 border-l-2 border-slate-200" : "mt-3"}`}>
-            {/* Header: Author & Controls */}
-            <div className="flex items-center justify-between text-xs text-slate-500 gap-2">
+        <div id={`comment-${comment._id}`} className={`relative ${depth > 0 ? "mt-3 pl-3.5 sm:pl-4 border-l-2 border-[#E2E8F0]" : "py-3.5 first:pt-0 last:pb-0"}`}>
+            {/* Author Row */}
+            <div className="flex items-center justify-between text-xs text-[#64748B] gap-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* Expand/Collapse Toggle */}
                     <button
+                        type="button"
                         onClick={() => setCollapsed(!collapsed)}
-                        className="text-slate-400 hover:text-slate-700 transition p-0.5 -ml-1 rounded"
+                        className="text-[#64748B] hover:text-[#172033] transition-colors p-0.5 rounded"
                         title={collapsed ? "Expand thread" : "Collapse thread"}
                     >
-                        {collapsed ? (
-                            <PlusSquare className="w-3.5 h-3.5" />
-                        ) : (
-                            <MinusSquare className="w-3.5 h-3.5" />
-                        )}
+                        {collapsed ? <PlusSquare className="w-3.5 h-3.5" /> : <MinusSquare className="w-3.5 h-3.5" />}
                     </button>
 
-                    {/* Author Details */}
                     {isDeleted ? (
-                        <span className="text-slate-400 italic text-[11px]">[deleted]</span>
+                        <span className="text-[#64748B] italic">[deleted]</span>
                     ) : (
                         <>
                             <Link
                                 to={`/profile/${comment.author?._id}`}
-                                className="font-bold text-slate-900 hover:text-indigo-600 transition"
+                                className="font-semibold text-[#172033] hover:text-[#4F46E5] transition-colors"
                             >
                                 {comment.author?.name || "Researcher"}
                             </Link>
 
                             {comment.author?.role && (
-                                <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded border border-slate-200 capitalize">
+                                <span className="text-[11px] px-1.5 py-0.5 bg-[#F8FAFC] text-[#64748B] rounded border border-[#E2E8F0] capitalize">
                                     {comment.author.role}
                                 </span>
                             )}
 
                             {comment.author?.institution && (
-                                <span className="hidden sm:inline text-slate-400 text-[11px]">
-                                    • {comment.author.institution}
+                                <span className="hidden sm:inline text-[#64748B]">
+                                    · {comment.author.institution}
                                 </span>
                             )}
                         </>
                     )}
 
-                    <span className="text-slate-400 text-[11px]">
-                        • {formatTimestamp(comment.createdAt)}
-                    </span>
+                    <span>· {formatTimestamp(comment.createdAt)}</span>
 
                     {comment.isEdited && !isDeleted && (
-                        <span className="text-slate-400 text-[10px] italic">
-                            (edited)
-                        </span>
+                        <span className="italic">(edited)</span>
                     )}
                 </div>
 
-                {/* Score when collapsed */}
                 {collapsed && (
-                    <span className="text-[11px] text-slate-500 font-mono">
-                        +{totalNestedCount} replies collapsed
+                    <span className="text-xs text-[#64748B]">
+                        +{totalNestedCount} collapsed
                     </span>
                 )}
             </div>
 
-            {/* Comment Body & Actions (Hidden if Collapsed) */}
             {!collapsed && (
-                <div className="mt-1 space-y-1.5">
-                    {/* Content or Edit Form */}
+                <div className="mt-1.5 space-y-2">
                     {isEditing ? (
-                        <form onSubmit={handleEdit} className="space-y-2 mt-1">
+                        <form onSubmit={handleEdit} className="space-y-2">
                             <textarea
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
                                 rows={3}
-                                className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 leading-relaxed shadow-2xs"
+                                className="prism-textarea"
                                 required
                             />
                             <div className="flex gap-2 justify-end">
-                                <button
+                                <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => { setIsEditing(false); setEditContent(comment.content); }}
-                                    className="px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900"
                                 >
                                     Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={editingSubmitting}
-                                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-medium shadow-2xs"
-                                >
+                                </Button>
+                                <Button type="submit" size="sm" disabled={editingSubmitting}>
                                     {editingSubmitting ? "Saving..." : "Save"}
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     ) : (
-                        <div className={`text-xs sm:text-[13px] leading-relaxed ${isDeleted ? "text-slate-400 italic" : "text-slate-800"}`}>
+                        <div className={`text-sm leading-relaxed ${isDeleted ? "text-[#64748B] italic" : "text-[#172033]"}`}>
                             {renderFormattedText(comment.content)}
                         </div>
                     )}
 
-                    {/* Action Bar (Upvote, Reply, Menu) */}
                     {!isDeleted && (
-                        <div className="flex items-center gap-2 pt-0.5 text-xs text-slate-500">
-                            {/* Upvote Button */}
+                        <div className="flex items-center gap-1.5 text-xs text-[#64748B]">
                             <button
+                                type="button"
                                 onClick={() => onUpvote(comment._id)}
-                                className={`flex items-center gap-1 px-2 py-0.5 rounded transition ${
+                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition-colors ${
                                     comment.hasUpvoted
-                                        ? "text-indigo-700 font-bold bg-indigo-50 border border-indigo-200"
-                                        : "hover:text-slate-900 hover:bg-slate-100"
+                                        ? "text-[#4F46E5] font-medium bg-[#EEF2FF] border border-indigo-200/80"
+                                        : "hover:text-[#172033] hover:bg-[#F8FAFC]"
                                 }`}
                                 title="Upvote"
                             >
                                 <ChevronUp className={`w-3.5 h-3.5 ${comment.hasUpvoted ? "stroke-[2.5]" : ""}`} />
-                                <span className="font-mono text-[11px]">{comment.upvoteCount || 0}</span>
+                                <span>{comment.upvoteCount || 0}</span>
                             </button>
 
-                            {/* Reply Button */}
                             {currentUser && (
                                 <button
+                                    type="button"
                                     onClick={() => setIsReplying(!isReplying)}
-                                    className={`flex items-center gap-1 px-2 py-0.5 rounded transition ${
+                                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition-colors ${
                                         isReplying
-                                            ? "text-indigo-700 bg-indigo-50 font-medium"
-                                            : "hover:text-slate-900 hover:bg-slate-100"
+                                            ? "text-[#4F46E5] bg-[#EEF2FF] font-medium"
+                                            : "hover:text-[#172033] hover:bg-[#F8FAFC]"
                                     }`}
                                 >
                                     <Reply className="w-3.5 h-3.5" />
@@ -253,29 +238,30 @@ export default function CommentNode({
                                 </button>
                             )}
 
-                            {/* Share / Copy link */}
                             <button
+                                type="button"
                                 onClick={handleCopyLink}
-                                className="flex items-center gap-1 px-2 py-0.5 rounded hover:text-slate-900 hover:bg-slate-100 transition"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:text-[#172033] hover:bg-[#F8FAFC] transition-colors"
                                 title="Copy permalink"
                             >
-                                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
+                                {copied ? <Check className="w-3.5 h-3.5 text-[#15803D]" /> : <Share2 className="w-3.5 h-3.5" />}
                                 <span>{copied ? "Copied" : "Share"}</span>
                             </button>
 
-                            {/* Author Edit / Delete */}
                             {isAuthor && (
                                 <div className="flex items-center gap-1">
                                     <button
+                                        type="button"
                                         onClick={() => setIsEditing(!isEditing)}
-                                        className="hover:text-slate-900 px-1.5 py-0.5 rounded hover:bg-slate-100 transition"
+                                        className="hover:text-[#172033] p-1 rounded-md hover:bg-[#F8FAFC] transition-colors"
                                         title="Edit comment"
                                     >
                                         <Edit2 className="w-3 h-3" />
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={handleDelete}
-                                        className="hover:text-rose-600 px-1.5 py-0.5 rounded hover:bg-rose-50 transition"
+                                        className="hover:text-[#DC2626] p-1 rounded-md hover:bg-red-50 transition-colors"
                                         title="Delete comment"
                                     >
                                         <Trash2 className="w-3 h-3" />
@@ -285,42 +271,41 @@ export default function CommentNode({
                         </div>
                     )}
 
-                    {/* Inline Reply Composer */}
                     {isReplying && (
-                        <form onSubmit={handleReply} className="mt-2 space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                                <CornerDownRight className="w-3.5 h-3.5 text-indigo-600" />
+                        <form onSubmit={handleReply} className="mt-2 space-y-2 bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
+                            <div className="flex items-center gap-1.5 text-xs text-[#64748B] font-medium">
+                                <CornerDownRight className="w-3.5 h-3.5 text-[#4F46E5]" />
                                 <span>Replying to {comment.author?.name || "researcher"}</span>
                             </div>
                             <textarea
                                 value={replyContent}
                                 onChange={(e) => setReplyContent(e.target.value)}
-                                placeholder="Add constructive scientific analysis..."
+                                placeholder="Write a reply..."
                                 rows={2}
-                                className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 leading-relaxed shadow-2xs"
+                                className="prism-textarea bg-white"
                                 autoFocus
                                 required
                             />
                             <div className="flex justify-end gap-2">
-                                <button
+                                <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => { setIsReplying(false); setReplyContent(""); }}
-                                    className="px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900"
                                 >
                                     Cancel
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="submit"
+                                    size="sm"
                                     disabled={replyingSubmitting || !replyContent.trim()}
-                                    className="px-3.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-medium shadow-2xs transition"
                                 >
                                     {replyingSubmitting ? "Posting..." : "Reply"}
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     )}
 
-                    {/* Recursive Children (Replies) */}
                     {hasReplies && (
                         <div className="space-y-1">
                             {comment.replies.map((childReply) => (
