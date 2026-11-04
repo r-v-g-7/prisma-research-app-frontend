@@ -16,17 +16,37 @@ export const listWorkspaceMeetings = async (workspaceId) => {
     return data;
 };
 
-export const createWorkspaceMeeting = async (workspaceId, { title, agenda, startTime, endTime }) => {
+export const createWorkspaceMeeting = async (workspaceId, meetingPayload) => {
     const res = await fetch(`${API_BASE_URL}/api/meetings/workspace/${workspaceId}`, {
         method: "POST",
         headers: {
             ...getAuthHeader(),
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ title, agenda, startTime, endTime })
+        body: JSON.stringify(meetingPayload)
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to create meeting");
+    return data;
+};
+
+export const joinMeeting = async (meetingId) => {
+    const res = await fetch(`${API_BASE_URL}/api/meetings/${meetingId}/join`, {
+        method: "POST",
+        headers: getAuthHeader()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to join meeting");
+    return data;
+};
+
+export const endMeeting = async (meetingId) => {
+    const res = await fetch(`${API_BASE_URL}/api/meetings/${meetingId}/end`, {
+        method: "POST",
+        headers: getAuthHeader()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to conclude meeting");
     return data;
 };
 

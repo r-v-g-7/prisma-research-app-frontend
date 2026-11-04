@@ -175,8 +175,8 @@ const WorkspaceDetail = () => {
     }, [id]);
 
     const currentUserId = (user?._id || user?.id)?.toString();
-    const isMember = workspace?.members?.some(m => (m?._id || m)?.toString() === currentUserId);
     const isCreator = (workspace?.creator?._id || workspace?.creator)?.toString() === currentUserId;
+    const isMember = isCreator || workspace?.members?.some(m => (m?._id || m)?.toString() === currentUserId);
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText(window.location.href);
