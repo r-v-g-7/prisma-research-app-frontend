@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { getSocket } from "@/services/socket";
 import {
     listWorkspaceMeetings,
     createWorkspaceMeeting,
@@ -79,15 +80,28 @@ export default function WorkspaceMeetings({ workspaceId, isMember, workspaceBrie
         }
     };
 
-    // Initial load and live auto-polling every 3 seconds for active sync across all participants
+    // Initial load and live real-time sync across all participants via Socket.IO
     useEffect(() => {
-        if (workspaceId) {
-            loadMeetings(true);
-            const interval = setInterval(() => {
-                loadMeetings(false);
-            }, 3000);
-            return () => clearInterval(interval);
-        }
+        if (!workspaceId) return;
+        loadMeetings(true);
+        const socket = getSocket();
+
+        const handleRealtimeMeetingUpdate = () => {
+            loadMeetings(false);
+        };
+
+        socket.on("workspace_meeting_created", handleRealtimeMeetingUpdate);
+        socket.on("workspace_meeting_updated", handleRealtimeMeetingUpdate);
+
+        const interval = setInterval(() => {
+            loadMeetings(false);
+        }, 5000);
+
+        return () => {
+            socket.off("workspace_meeting_created", handleRealtimeMeetingUpdate);
+            socket.off("workspace_meeting_updated", handleRealtimeMeetingUpdate);
+            clearInterval(interval);
+        };
     }, [workspaceId]);
 
     // 1. One-Click Instant Live Meeting
@@ -263,16 +277,16 @@ export default function WorkspaceMeetings({ workspaceId, isMember, workspaceBrie
     const completedMeetings = meetings.filter(m => m.status === "completed");
 
     return (
-        <div className="space-y-5">
+        <div className="space-y-4">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
                 <div>
-                    <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                        <Video className="w-5 h-5 text-emerald-400" />
-                        <span>Live Research Video Conferences</span>
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+                        <Video className="w-4 h-4 text-emerald-600" />
+                        <span>Live Video Conference & Room Sync</span>
                     </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                        High-definition collaborative video rooms linked directly to workspace hypotheses, evidence, and notes.
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        High-definition collaborative video rooms linked directly to workspace hypotheses and notes.
                     </p>
                 </div>
 
@@ -280,26 +294,26 @@ export default function WorkspaceMeetings({ workspaceId, isMember, workspaceBrie
                     <Button
                         onClick={handleStartInstantMeeting}
                         disabled={startingInstant}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-9 px-4 flex items-center gap-1.5 shadow-sm shadow-emerald-950"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8.5 px-3.5 flex items-center gap-1.5 shadow-2xs font-medium"
                     >
                         <PhoneCall className="w-3.5 h-3.5" />
-                        <span>{startingInstant ? "Launching Call..." : "Start Live Call Now"}</span>
+                        <span>{startingInstant ? "Launching Call..." : "Start Live Call"}</span>
                     </Button>
 
                     {isMember && (
                         <Button
                             onClick={() => setShowNewModal(true)}
                             variant="outline"
-                            className="bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-200 text-xs h-9 px-3.5 flex items-center gap-1.5"
+                            className="bg-white border-slate-200 hover:bg-slate-50 text-slate-700 text-xs h-8.5 px-3 flex items-center gap-1.5"
                         >
-                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Schedule Meeting</span>
+                            <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Schedule Session</span>
                         </Button>
                     )}
                 </div>
             </div>
 
-            {/* 🔴 ACTIVE LIVE CALL BANNER (Appears immediately when any user starts a call) */}
+            {/* 🔴 ACTIVE LIVE CALL BANNER */}
             {activeMeetings.length > 0 && (
                 <div className="space-y-3">
                     {activeMeetings.map((activeCall) => {
@@ -307,55 +321,55 @@ export default function WorkspaceMeetings({ workspaceId, isMember, workspaceBrie
                         return (
                             <div
                                 key={activeCall._id}
-                                className="bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/80 border-2 border-emerald-500/50 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl shadow-emerald-950/40"
+                                className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm"
                             >
                                 <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-                                    <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
-                                        <Radio className="w-5 h-5 animate-pulse" />
-                                        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
-                                        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500" />
+                                    <div className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
+                                        <Radio className="w-4 h-4 animate-pulse" />
+                                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-600" />
                                     </div>
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-[10px] font-mono font-bold bg-emerald-500 text-slate-950 px-2 py-0.5 rounded uppercase tracking-wider">
+                                            <span className="text-[10px] font-mono font-bold bg-emerald-600 text-white px-2 py-0.5 rounded uppercase tracking-wider">
                                                 LIVE NOW
                                             </span>
-                                            <h3 className="text-sm sm:text-base font-bold text-white truncate">
+                                            <h3 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                                                 {activeCall.title}
                                             </h3>
                                         </div>
-                                        <p className="text-xs text-slate-300 mt-1">
-                                            Host: <strong className="text-white">{activeCall.organizer?.name || "Researcher"}</strong>
+                                        <p className="text-xs text-slate-600 mt-0.5">
+                                            Host: <strong className="text-slate-800">{activeCall.organizer?.name || "Researcher"}</strong>
                                             {activeCall.participants && activeCall.participants.length > 0 && (
-                                                <span className="text-slate-400 font-mono"> • {activeCall.participants.length} Participant(s)</span>
+                                                <span className="text-slate-500 font-mono"> • {activeCall.participants.length} Active Participant(s)</span>
                                             )}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2.5 shrink-0">
+                                <div className="flex items-center gap-2 shrink-0">
                                     <button
                                         onClick={() => handleJoinMeeting(activeCall)}
-                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-md shadow-emerald-500/20"
+                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-2xs"
                                     >
-                                        <Video className="w-4 h-4" />
+                                        <Video className="w-3.5 h-3.5" />
                                         <span>Join Call Room</span>
-                                        <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                                        <ExternalLink className="w-3 h-3 opacity-80" />
                                     </button>
 
                                     <Button
                                         onClick={() => openMeetingRoom(activeCall._id)}
                                         variant="outline"
-                                        className="bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300 text-xs h-9 px-3"
+                                        className="bg-white border-slate-200 hover:bg-slate-50 text-slate-700 text-xs h-8.5 px-2.5"
                                     >
-                                        <FileText className="w-3.5 h-3.5" />
+                                        <FileText className="w-3.5 h-3.5 text-slate-500" />
                                         <span>Notes</span>
                                     </Button>
 
                                     {isOrganizer && (
                                         <button
                                             onClick={() => handleEndMeeting(activeCall._id)}
-                                            className="px-3 py-2 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-950/60 text-xs font-medium transition"
+                                            className="px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-medium transition"
                                             title="Conclude call for everyone"
                                         >
                                             End Call
@@ -372,11 +386,11 @@ export default function WorkspaceMeetings({ workspaceId, isMember, workspaceBrie
             {loading ? (
                 <div className="py-12 text-center text-xs text-slate-400">Loading research meetings...</div>
             ) : meetings.length === 0 ? (
-                <div className="text-center py-14 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 p-8 space-y-4">
-                    <Video className="w-10 h-10 text-emerald-500/40 mx-auto" />
+                <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200 p-6 space-y-4">
+                    <Video className="w-8 h-8 text-slate-400 mx-auto" />
                     <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-white">No research meetings scheduled yet</h3>
-                        <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                        <h3 className="text-xs sm:text-sm font-semibold text-slate-800">No research meetings scheduled yet</h3>
+                        <p className="text-xs text-slate-500 max-w-sm mx-auto">
                             Launch a collaborative video call with your laboratory team to discuss hypotheses, code, and findings.
                         </p>
                     </div>
@@ -385,19 +399,19 @@ export default function WorkspaceMeetings({ workspaceId, isMember, workspaceBrie
                         <Button
                             onClick={handleStartInstantMeeting}
                             disabled={startingInstant}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-9 px-4 flex items-center gap-1.5 shadow-sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3.5 flex items-center gap-1.5 shadow-sm"
                         >
                             <PhoneCall className="w-3.5 h-3.5" />
-                            <span>Start Live Call Now</span>
+                            <span>Start Instant Call</span>
                         </Button>
 
                         {isMember && (
                             <Button
                                 onClick={() => setShowNewModal(true)}
                                 variant="outline"
-                                className="bg-slate-900 border-slate-800 text-slate-300 text-xs h-9 px-4 flex items-center gap-1.5"
+                                className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8 px-3.5 flex items-center gap-1.5"
                             >
-                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                <Calendar className="w-3.5 h-3.5 text-slate-500" />
                                 <span>Schedule Future Meeting</span>
                             </Button>
                         )}

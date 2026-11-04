@@ -1,24 +1,22 @@
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { fetchPublicProfile } from "@/services/profile";
-import { fetchWorkspaces, inviteMember } from "@/services/workspace";
+import { fetchPublicProfile, fetchActivityHeatmap, toggleFollowResearcher } from "@/services/profile";
 import { AuthContext } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import PostCard from "@/components/PostCard";
+import ContributionHeatmap from "@/components/profile/ContributionHeatmap";
 import { 
-  GraduationCap, 
   Building2, 
   BookOpen, 
-  ShieldCheck, 
   Layers, 
-  MessageSquare, 
-  UserPlus, 
   ArrowLeft, 
+  UserPlus, 
   Check, 
   ExternalLink, 
-  Sparkles, 
-  Lock, 
-  Globe 
+  Globe, 
+  Github,
+  FlaskConical,
+  MessageSquare
 } from "lucide-react";
 
 const PublicProfile = () => {
@@ -27,23 +25,29 @@ const PublicProfile = () => {
     const navigate = useNavigate();
 
     const [profileData, setProfileData] = useState(null);
+    const [heatmapData, setHeatmapData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState("posts");
-
-    // Collaboration Invite Modal State
-    const [myWorkspaces, setMyWorkspaces] = useState([]);
-    const [selectedWorkspace, setSelectedWorkspace] = useState("");
-    const [showInviteModal, setShowInviteModal] = useState(false);
-    const [inviteSending, setInviteSending] = useState(false);
-    const [inviteFeedback, setInviteFeedback] = useState("");
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followLoading, setFollowLoading] = useState(false);
 
     useEffect(() => {
         const loadProfile = async () => {
             try {
                 setLoading(true);
-                const data = await fetchPublicProfile(userId);
-                setProfileData(data.data);
+                const [profRes, heatRes] = await Promise.all([
+                    fetchPublicProfile(userId),
+                    fetchActivityHeatmap(userId).catch(() => ({ data: null }))
+                ]);
+
+                if (profRes.data) {
+                    setProfileData(profRes.data);
+                    setIsFollowing(Boolean(profRes.data.profile?.isFollowing));
+                }
+                if (heatRes?.data) {
+                    setHeatmapData(heatRes.data);
+                }
                 setError("");
             } catch (err) {
                 setError(err.message || "Failed to load researcher profile");
@@ -57,303 +61,315 @@ const PublicProfile = () => {
         }
     }, [userId]);
 
-    const handleOpenInviteModal = async () => {
-        setShowInviteModal(true);
-        setInviteFeedback("");
+    const handleToggleFollow = async () => {
+        if (!currentUser) {
+            navigate("/login");
+            return;
+        }
+        setFollowLoading(true);
+        const nextState = !isFollowing;
+        setIsFollowing(nextState);
+
         try {
-            const res = await fetchWorkspaces();
-            const list = res.data || [];
-            setMyWorkspaces(list);
-            if (list.length > 0) {
-                setSelectedWorkspace(list[0]._id);
+            const res = await toggleFollowResearcher(userId);
+            if (res.data) {
+                setIsFollowing(res.data.isFollowing);
             }
         } catch (err) {
-            setInviteFeedback("Could not load your workspaces.");
-        }
-    };
-
-    const handleSendInvite = async () => {
-        if (!selectedWorkspace) return;
-        setInviteSending(true);
-        try {
-            await inviteMember(selectedWorkspace, { inviteeId: userId });
-            setInviteFeedback("Invitation sent successfully!");
-            setTimeout(() => {
-                setShowInviteModal(false);
-                setInviteFeedback("");
-            }, 1500);
-        } catch (err) {
-            setInviteFeedback(err.message || "Failed to invite to workspace");
+            setIsFollowing(!nextState);
+            alert(err.message || "Failed to update follow status");
         } finally {
-            setInviteSending(false);
+            setFollowLoading(false);
         }
     };
 
     if (loading) {
         return (
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center">
-                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-xs text-slate-400 font-mono">Loading Scholar Identity...</p>
+            <div className="max-w-4xl mx-auto py-16 text-center text-xs text-slate-400">
+                Loading researcher profile...
             </div>
         );
     }
 
     if (error || !profileData) {
         return (
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center max-w-md mx-auto space-y-4">
-                <h2 className="text-lg font-bold text-white">Researcher Not Found</h2>
-                <p className="text-xs text-slate-400">{error || "Could not retrieve the requested academic profile."}</p>
-                <Button onClick={() => navigate('/feed')} className="bg-indigo-600 text-white text-xs">
-                    Return to Knowledge Feed
+            <div className="max-w-4xl mx-auto py-16 text-center space-y-4">
+                <p className="text-sm text-slate-500">{error || "Researcher not found."}</p>
+                <Button onClick={() => navigate("/feed")} variant="outline" className="text-xs">
+                    Back to Feed
                 </Button>
             </div>
         );
     }
 
-    const { user: profile, posts, workspaces } = profileData;
-    const isSelf = currentUser?._id === profile._id;
+    const { profile, posts = [], workspaces = [] } = profileData;
+    const isSelf = currentUser && ((currentUser._id || currentUser.id) === userId);
 
     return (
-        <div className="space-y-6 pb-20 max-w-4xl mx-auto">
-            {/* Top Navigation */}
+        <div className="min-w-0 max-w-4xl mx-auto space-y-5 pb-16">
+            {/* Top Navigation Back */}
             <div className="flex items-center justify-between">
                 <button
-                    onClick={() => navigate('/feed')}
-                    className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition"
+                    onClick={() => navigate(-1)}
+                    className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition font-medium"
                 >
                     <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Knowledge Feed</span>
+                    <span>Back</span>
                 </button>
             </div>
 
             {/* Profile Header Card */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                {/* Banner */}
-                <div className="h-32 bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border-b border-slate-800 p-6 relative">
-                    <div className="absolute top-4 right-4 flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-[10px] font-mono uppercase tracking-wider">
-                            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-                            Verified Scholar
-                        </span>
-                    </div>
-                </div>
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                {/* Cover Banner */}
+                <div className="h-28 bg-gradient-to-r from-indigo-500 via-sky-500 to-purple-600" />
 
-                <div className="px-6 pb-6 pt-0 relative">
-                    {/* Avatar & Action Button */}
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 mb-6">
-                        <div className="w-24 h-24 bg-slate-950 rounded-2xl p-1 shadow-xl border border-slate-800">
-                            <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-3xl font-bold text-white font-mono uppercase">
-                                {profile.name?.charAt(0) || "U"}
+                <div className="px-6 pb-6 pt-0 relative space-y-4">
+                    {/* Avatar & Follow Action Row */}
+                    <div className="flex justify-between items-end -mt-12">
+                        <div className="w-22 h-22 rounded-xl bg-white p-1 border-2 border-white shadow-md">
+                            <div className="w-full h-full rounded-lg bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center justify-center font-bold text-2xl font-mono">
+                                {profile.name?.charAt(0) || "R"}
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            {isSelf ? (
-                                <Button
-                                    onClick={() => navigate('/profile')}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 px-4"
-                                >
-                                    Edit My Academic Profile
-                                </Button>
+                        {!isSelf && (
+                            <Button
+                                onClick={handleToggleFollow}
+                                disabled={followLoading}
+                                className={`text-xs h-8.5 font-medium transition shadow-2xs ${
+                                    isFollowing
+                                        ? "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                                        : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                                }`}
+                            >
+                                {isFollowing ? (
+                                    <>
+                                        <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                                        <span>Following</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <UserPlus className="w-3.5 h-3.5 mr-1" />
+                                        <span>Follow Researcher</span>
+                                    </>
+                                )}
+                            </Button>
+                        )}
+                    </div>
+
+                    {/* Identity Details */}
+                    <div className="space-y-3">
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">
+                                {profile.name}
+                            </h1>
+                            {profile.headline ? (
+                                <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
+                                    {profile.headline}
+                                </p>
                             ) : (
-                                <Button
-                                    onClick={handleOpenInviteModal}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 px-4 flex items-center gap-2 shadow-md shadow-indigo-600/20 border border-indigo-500/30"
-                                >
-                                    <UserPlus className="w-4 h-4" />
-                                    <span>Invite to Research Lab</span>
-                                </Button>
+                                <p className="text-xs text-slate-500 capitalize mt-0.5">
+                                    {profile.role || "Researcher"} • {profile.fieldOfStudy}
+                                </p>
                             )}
                         </div>
-                    </div>
 
-                    {/* Name & Academic Meta */}
-                    <div className="space-y-4 mb-6">
-                        <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{profile.name}</h1>
-                                <span className="px-2 py-0.5 rounded text-[11px] font-mono uppercase text-indigo-400 bg-indigo-500/10 border border-indigo-500/20">
-                                    {profile.role}
+                        {/* Institution, Department, ORCID & Links */}
+                        <div className="flex items-center gap-3 text-xs text-slate-600 flex-wrap pt-1">
+                            {profile.institution && (
+                                <span className="flex items-center gap-1 text-slate-700 font-medium">
+                                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                                    {profile.institution}
                                 </span>
-                            </div>
-                            <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
-                                {profile.institution && (
-                                    <span className="flex items-center gap-1 text-slate-300">
-                                        <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                                        {profile.institution}
-                                    </span>
-                                )}
-                            </p>
+                            )}
+                            {profile.department && (
+                                <span className="text-slate-500">• {profile.department}</span>
+                            )}
+                            {profile.orcid && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-[11px]">
+                                    <span>ORCID: {profile.orcid}</span>
+                                </span>
+                            )}
+                            {profile.github && (
+                                <a
+                                    href={profile.github.startsWith("http") ? profile.github : `https://${profile.github}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-slate-600 hover:text-indigo-600"
+                                >
+                                    <Github className="w-3.5 h-3.5" />
+                                    <span>GitHub</span>
+                                </a>
+                            )}
+                            {profile.website && (
+                                <a
+                                    href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-slate-600 hover:text-indigo-600"
+                                >
+                                    <Globe className="w-3.5 h-3.5" />
+                                    <span>Lab Site</span>
+                                </a>
+                            )}
                         </div>
 
-                        {profile.fieldOfStudy && (
-                            <div>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-950/60 text-indigo-300 text-xs font-mono rounded-lg border border-indigo-500/30">
-                                    <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
-                                    <span>{profile.fieldOfStudy}</span>
-                                </span>
+                        {profile.bio && (
+                            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed pt-2 border-t border-slate-100">
+                                {profile.bio}
+                            </p>
+                        )}
+
+                        {/* Skills / Methods */}
+                        {profile.skills && profile.skills.length > 0 && (
+                            <div className="space-y-1.5 pt-2">
+                                <span className="text-[11px] font-bold uppercase font-mono text-slate-400">Expertise & Methodologies</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {profile.skills.map((skill, idx) => (
+                                        <span
+                                            key={idx}
+                                            className="px-2.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[11px] font-mono text-slate-700"
+                                        >
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
-                        {/* Bio */}
-                        <div className="bg-slate-950 rounded-xl p-4 border border-slate-800">
-                            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">
-                                Research Agenda & Focus
-                            </h3>
-                            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
-                                {profile.bio || "No research biography provided yet."}
-                            </p>
-                        </div>
-
-                        {/* Skills and Interests */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {profile.skills && profile.skills.length > 0 && (
-                                <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 space-y-2">
-                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
-                                        Methods & Tooling
-                                    </h3>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {profile.skills.map((s, i) => (
-                                            <span key={i} className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-300 rounded border border-slate-800">
-                                                {s}
-                                            </span>
-                                        ))}
-                                    </div>
+                        {/* Research Topics */}
+                        {profile.interests && profile.interests.length > 0 && (
+                            <div className="space-y-1.5 pt-1">
+                                <span className="text-[11px] font-bold uppercase font-mono text-slate-400">Research Topics</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {profile.interests.map((int, idx) => (
+                                        <span
+                                            key={idx}
+                                            className="px-2.5 py-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-[11px] font-mono text-indigo-700 font-medium"
+                                        >
+                                            #{int}
+                                        </span>
+                                    ))}
                                 </div>
-                            )}
-
-                            {profile.interests && profile.interests.length > 0 && (
-                                <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 space-y-2">
-                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
-                                        Target Disciplines
-                                    </h3>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {profile.interests.map((it, i) => (
-                                            <span key={i} className="text-xs font-mono px-2 py-0.5 bg-indigo-950/40 text-indigo-300 rounded border border-indigo-500/20">
-                                                #{it}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
-                </div>
-
-                {/* Profile Tabs */}
-                <div className="flex border-t border-slate-800 bg-slate-950 px-6 gap-2">
-                    <button
-                        onClick={() => setActiveTab("posts")}
-                        className={`py-3 px-4 text-xs font-medium border-b-2 transition -mb-px flex items-center gap-2 ${
-                            activeTab === "posts"
-                                ? "border-indigo-500 text-indigo-300 font-bold"
-                                : "border-transparent text-slate-400 hover:text-white"
-                        }`}
-                    >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Research Publications ({posts?.length || 0})</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("workspaces")}
-                        className={`py-3 px-4 text-xs font-medium border-b-2 transition -mb-px flex items-center gap-2 ${
-                            activeTab === "workspaces"
-                                ? "border-indigo-500 text-indigo-300 font-bold"
-                                : "border-transparent text-slate-400 hover:text-white"
-                        }`}
-                    >
-                        <Layers className="w-3.5 h-3.5" />
-                        <span>Active Research Labs ({workspaces?.length || 0})</span>
-                    </button>
                 </div>
             </div>
 
-            {/* TAB 1: POSTS */}
-            {activeTab === "posts" && (
-                <div className="space-y-4">
-                    {(!posts || posts.length === 0) ? (
-                        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs">
-                            No research publications or debates submitted yet by this researcher.
-                        </div>
-                    ) : (
-                        posts.map(post => (
-                            <PostCard key={post._id} post={{ ...post, author: profile }} />
-                        ))
-                    )}
-                </div>
-            )}
+            {/* GitHub-Style Contribution Heatmap */}
+            <ContributionHeatmap
+                heatmapData={heatmapData}
+                userName={profile.name}
+            />
 
-            {/* TAB 2: WORKSPACES */}
-            {activeTab === "workspaces" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(!workspaces || workspaces.length === 0) ? (
-                        <div className="col-span-full bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs">
-                            This scholar is not currently leading any public research labs.
-                        </div>
-                    ) : (
-                        workspaces.map(ws => (
-                            <div
-                                key={ws._id}
-                                onClick={() => navigate(`/workspace/${ws._id}`)}
-                                className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition cursor-pointer space-y-3"
-                            >
-                                <div className="flex justify-between items-start gap-2">
-                                    <h4 className="text-sm font-bold text-white hover:text-indigo-300 transition truncate">{ws.name}</h4>
-                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800 capitalize">
-                                        {ws.privacy}
-                                    </span>
+            {/* Publications */}
+            {profile.publications && profile.publications.length > 0 && (
+                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-3">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                        <BookOpen className="w-4 h-4 text-indigo-600" />
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-900">
+                            Selected Scholarly Publications
+                        </h3>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                        {profile.publications.map((pub, idx) => (
+                            <div key={idx} className="py-2.5 first:pt-0 last:pb-0 space-y-1">
+                                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
+                                    {pub.title}
+                                </h4>
+                                <div className="flex items-center gap-2 text-xs text-slate-500 font-mono text-[11px]">
+                                    <span>{pub.venue} ({pub.year})</span>
+                                    {pub.doi && (
+                                        <a
+                                            href={`https://doi.org/${pub.doi}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-indigo-600 hover:underline flex items-center gap-0.5"
+                                        >
+                                            <span>doi:{pub.doi}</span>
+                                            <ExternalLink className="w-2.5 h-2.5" />
+                                        </a>
+                                    )}
                                 </div>
-                                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{ws.description}</p>
-                                <span className="block text-[11px] font-mono text-indigo-400">
-                                    {ws.members?.length || 1} team members
-                                </span>
                             </div>
-                        ))
-                    )}
-                </div>
-            )}
-
-            {/* Invite Modal */}
-            {showInviteModal && (
-                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-                        <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-                            <h3 className="text-base font-bold text-white">Invite {profile.name} to Lab</h3>
-                            <button onClick={() => setShowInviteModal(false)} className="text-slate-400 hover:text-white">✕</button>
-                        </div>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                            Select which research workspace you would like to invite this scholar to collaborate on.
-                        </p>
-                        {myWorkspaces.length === 0 ? (
-                            <p className="text-xs text-amber-400">You must create a research workspace first before inviting peers.</p>
-                        ) : (
-                            <select
-                                value={selectedWorkspace}
-                                onChange={(e) => setSelectedWorkspace(e.target.value)}
-                                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 outline-none"
-                            >
-                                {myWorkspaces.map(w => (
-                                    <option key={w._id} value={w._id}>{w.name}</option>
-                                ))}
-                            </select>
-                        )}
-                        {inviteFeedback && (
-                            <p className="text-xs text-indigo-300">{inviteFeedback}</p>
-                        )}
-                        <div className="flex justify-end gap-2 pt-2">
-                            <Button variant="outline" onClick={() => setShowInviteModal(false)} className="bg-slate-950 border-slate-800 text-slate-300 text-xs h-9">
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleSendInvite}
-                                disabled={inviteSending || myWorkspaces.length === 0}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 px-4"
-                            >
-                                {inviteSending ? "Sending..." : "Send Invitation"}
-                            </Button>
-                        </div>
+                        ))}
                     </div>
                 </div>
             )}
+
+            {/* Tabs: Discussions vs Collaborative Research Labs */}
+            <div className="space-y-3">
+                <div className="flex border-b border-slate-200 gap-4">
+                    <button
+                        onClick={() => setActiveTab("posts")}
+                        className={`pb-2.5 text-xs font-bold transition border-b-2 flex items-center gap-1.5 ${
+                            activeTab === "posts"
+                                ? "border-indigo-600 text-indigo-700"
+                                : "border-transparent text-slate-500 hover:text-slate-800"
+                        }`}
+                    >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Research Discussions ({posts.length})</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("workspaces")}
+                        className={`pb-2.5 text-xs font-bold transition border-b-2 flex items-center gap-1.5 ${
+                            activeTab === "workspaces"
+                                ? "border-indigo-600 text-indigo-700"
+                                : "border-transparent text-slate-500 hover:text-slate-800"
+                        }`}
+                    >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Collaborative Labs ({workspaces.length})</span>
+                    </button>
+                </div>
+
+                {activeTab === "posts" && (
+                    <div className="space-y-3">
+                        {posts.length === 0 ? (
+                            <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-xs text-slate-400">
+                                No discussions published yet.
+                            </div>
+                        ) : (
+                            posts.map(p => <PostCard key={p._id} post={p} />)
+                        )}
+                    </div>
+                )}
+
+                {activeTab === "workspaces" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {workspaces.length === 0 ? (
+                            <div className="col-span-full bg-white border border-slate-200 rounded-xl p-8 text-center text-xs text-slate-400">
+                                No public research labs currently active.
+                            </div>
+                        ) : (
+                            workspaces.map(ws => (
+                                <Link
+                                    key={ws._id}
+                                    to={`/workspace/${ws._id}`}
+                                    className="bg-white border border-slate-200 hover:border-indigo-300 rounded-xl p-4 shadow-2xs space-y-2 group transition"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition truncate">
+                                            {ws.title}
+                                        </h4>
+                                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            public
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                                        {ws.description}
+                                    </p>
+                                    <div className="text-[11px] font-mono text-slate-400 pt-1">
+                                        Active since {new Date(ws.createdAt).toLocaleDateString()}
+                                    </div>
+                                </Link>
+                            ))
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

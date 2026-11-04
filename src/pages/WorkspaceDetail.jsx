@@ -43,15 +43,17 @@ import {
     HelpCircle,
     Send,
     UserPlus,
+    MessageSquare,
+    Video,
     FlaskConical,
     LogOut,
-    Video,
     HardDrive,
     Download,
     Library
 } from "lucide-react";
 import WorkspaceMeetings from "@/components/workspace/WorkspaceMeetings";
 import WorkspaceFiles from "@/components/workspace/WorkspaceFiles";
+import WorkspaceChat from "@/components/workspace/WorkspaceChat";
 import ZoteroImportModal from "@/components/workspace/ZoteroImportModal";
 import { exportWorkspaceBibliography } from "@/services/discovery";
 
@@ -85,8 +87,32 @@ const WorkspaceDetail = () => {
 
     const [workspace, setWorkspace] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState("brief");
+    const [activeTab, setActiveTab] = useState("chat");
     const [showCopySuccess, setShowCopySuccess] = useState(false);
+
+    const handleChatConvertToTask = async (text) => {
+        try {
+            await addWorkspaceTask(id, { title: text.slice(0, 100) });
+            await loadWorkspace();
+            alert("Added task to workspace milestones!");
+        } catch (err) {
+            alert(err.message || "Failed to create task");
+        }
+    };
+
+    const handleChatConvertToDecision = async (text) => {
+        try {
+            await addWorkspaceDecision(id, {
+                title: text.slice(0, 60),
+                rationale: text,
+                alternatives: ""
+            });
+            await loadWorkspace();
+            alert("Logged decision in workspace decision log!");
+        } catch (err) {
+            alert(err.message || "Failed to log decision");
+        }
+    };
     const [processing, setProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
@@ -372,26 +398,26 @@ const WorkspaceDetail = () => {
 
     if (loading) {
         return (
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center">
-                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-xs text-slate-400 font-mono">Loading Collaborative Research Lab...</p>
+            <div className="bg-white border border-slate-200 rounded-xl p-12 text-center shadow-2xs">
+                <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-xs text-slate-500 font-mono">Loading Collaborative Research Lab...</p>
             </div>
         );
     }
 
     if (!workspace) {
         return (
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center max-w-md mx-auto space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-400">
+            <div className="bg-white border border-slate-200 rounded-xl p-10 text-center max-w-md mx-auto space-y-4 shadow-2xs">
+                <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
                     <Lock className="w-6 h-6" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-white">Private Research Lab</h2>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    <h2 className="text-lg font-bold text-slate-900">Private Research Lab</h2>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                         {errorMessage || "You must be invited by the research team to access this private repository."}
                     </p>
                 </div>
-                <Button onClick={() => navigate('/workspaces')} className="bg-indigo-600 hover:bg-indigo-500 text-xs text-white">
+                <Button onClick={() => navigate('/workspaces')} className="bg-indigo-600 hover:bg-indigo-700 text-xs text-white">
                     Back to Workspaces
                 </Button>
             </div>
@@ -404,7 +430,7 @@ const WorkspaceDetail = () => {
             <div className="flex items-center justify-between">
                 <button
                     onClick={() => navigate('/workspaces')}
-                    className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition"
+                    className="inline-flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Research Labs</span>
@@ -412,50 +438,50 @@ const WorkspaceDetail = () => {
             </div>
 
             {errorMessage && (
-                <div className="p-3.5 bg-red-950/60 border border-red-500/30 text-red-300 text-xs rounded-xl flex justify-between items-center">
+                <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex justify-between items-center">
                     <span>{errorMessage}</span>
                     <button onClick={() => setErrorMessage("")} className="font-bold text-sm">✕</button>
                 </div>
             )}
 
             {/* Workspace Header Command Center */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-xl space-y-5">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                    <div className="space-y-3 flex-1 min-w-0">
+                    <div className="space-y-2.5 flex-1 min-w-0">
                         <div className="flex items-center gap-2.5 flex-wrap">
-                            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{workspace.title || workspace.name}</h1>
+                            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{workspace.title || workspace.name}</h1>
                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border ${
                                 workspace.privacy === 'public'
-                                    ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                                    : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}>
                                 {workspace.privacy === 'public' ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
                                 <span className="capitalize">{workspace.privacy} Lab</span>
                             </span>
-                            <span className="text-[11px] font-mono px-2 py-0.5 bg-slate-800 text-slate-300 rounded border border-slate-700 capitalize">
+                            <span className="text-[11px] font-mono px-2 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200 capitalize">
                                 {workspace.type || "Research Project"}
                             </span>
                         </div>
 
-                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
+                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
                             {workspace.description}
                         </p>
 
                         {/* Originating Seed Discussion Bridge */}
                         {workspace.post && (
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-950/60 border border-indigo-500/30 rounded-xl text-xs text-indigo-300">
-                                <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                                <span className="text-slate-400">Originating Seed:</span>
-                                <Link to={`/post/${workspace.post._id || workspace.post}`} className="font-semibold underline hover:text-white truncate max-w-md">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-700 font-medium">
+                                <FileText className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                <span className="text-slate-500">Originating Seed:</span>
+                                <Link to={`/post/${workspace.post._id || workspace.post}`} className="font-semibold underline hover:text-indigo-900 truncate max-w-md">
                                     {workspace.post.title || "View Original Discussion"}
                                 </Link>
                             </div>
                         )}
 
                         {workspace.tags && workspace.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1">
+                            <div className="flex flex-wrap gap-1.5 pt-0.5">
                                 {workspace.tags.map((tag, i) => (
-                                    <span key={i} className="text-[11px] font-mono px-2 py-0.5 bg-slate-950 text-slate-400 rounded-md border border-slate-800">
+                                    <span key={i} className="text-[11px] font-mono px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md border border-slate-200">
                                         #{tag}
                                     </span>
                                 ))}
@@ -465,28 +491,28 @@ const WorkspaceDetail = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                        <Button onClick={handleCopyLink} variant="outline" className="bg-slate-950 border-slate-800 text-slate-300 hover:text-white text-xs h-9">
+                        <Button onClick={handleCopyLink} variant="outline" className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8.5 shadow-2xs">
                             {showCopySuccess ? (
                                 <>
-                                    <Check className="w-3.5 h-3.5 text-emerald-400 mr-1" />
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 mr-1" />
                                     <span>Copied Link</span>
                                 </>
                             ) : (
                                 <>
-                                    <Copy className="w-3.5 h-3.5 mr-1" />
+                                    <Copy className="w-3.5 h-3.5 mr-1 text-slate-400" />
                                     <span>Copy Lab Link</span>
                                 </>
                             )}
                         </Button>
 
                         {!isMember && workspace.privacy === 'public' && (
-                            <Button onClick={handleJoin} disabled={processing} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9">
+                            <Button onClick={handleJoin} disabled={processing} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8.5 shadow-2xs font-medium">
                                 {processing ? "Joining..." : "Join Research Team"}
                             </Button>
                         )}
 
                         {isMember && !isCreator && (
-                            <Button onClick={handleLeave} disabled={processing} variant="outline" className="text-xs h-9 text-red-400 hover:bg-red-500/10 border-red-500/30">
+                            <Button onClick={handleLeave} disabled={processing} variant="outline" className="text-xs h-8.5 text-red-600 hover:bg-red-50 border-red-200">
                                 <LogOut className="w-3.5 h-3.5 mr-1" />
                                 <span>Leave Lab</span>
                             </Button>
@@ -495,10 +521,10 @@ const WorkspaceDetail = () => {
                 </div>
 
                 {/* Metadata Row */}
-                <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 flex-wrap gap-2">
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
                     <div className="flex items-center gap-2">
                         <span>Lead Principal Investigator:</span>
-                        <Link to={`/profile/${workspace.creator?._id}`} className="font-semibold text-white hover:text-indigo-300 transition">
+                        <Link to={`/profile/${workspace.creator?._id}`} className="font-bold text-slate-900 hover:text-indigo-600 transition">
                             {workspace.creator?.name || "Academic Lead"}
                         </Link>
                     </div>
@@ -509,18 +535,18 @@ const WorkspaceDetail = () => {
                 </div>
             </div>
 
-            {/* Research Lab Navigation Tabs (ZERO EMOJIS) */}
-            <div className="flex border-b border-slate-800 overflow-x-auto gap-1 bg-slate-900/60 px-3 pt-2 rounded-t-2xl border-x">
+            {/* Research Lab Navigation Tabs */}
+            <div className="flex border-b border-slate-200 overflow-x-auto gap-1 bg-white px-3 pt-2 rounded-t-xl border-x">
                 {[
+                    { id: "chat", label: "# lab-chat", icon: MessageSquare, count: null },
+                    { id: "meetings", label: "Video Sync", icon: Video, count: null },
                     { id: "brief", label: "Research Brief", icon: FileText, count: null },
                     { id: "evidence", label: "Evidence Board", icon: FlaskConical, count: workspace.evidence?.length || 0 },
                     { id: "decisions", label: "Decision Log", icon: Scale, count: workspace.decisions?.length || 0 },
-                    { id: "meetings", label: "Google Meet", icon: Video, count: null },
-                    { id: "files", label: "Files & Drive", icon: HardDrive, count: null },
-                    { id: "references", label: "Literature References", icon: BookOpen, count: workspace.references?.length || 0 },
-                    { id: "notes", label: "Scientific Notes", icon: StickyNote, count: workspace.notes?.length || 0 },
                     { id: "tasks", label: "Milestones", icon: ListTodo, count: workspace.tasks?.length || 0 },
-                    { id: "members", label: "Research Team", icon: Users, count: workspace.members?.length || 0 }
+                    { id: "files", label: "Files & Drive", icon: HardDrive, count: null },
+                    { id: "references", label: "References", icon: BookOpen, count: workspace.references?.length || 0 },
+                    { id: "members", label: "Team", icon: Users, count: workspace.members?.length || 0 }
                 ].map(tab => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -528,16 +554,16 @@ const WorkspaceDetail = () => {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition -mb-px flex items-center gap-2 ${
+                            className={`px-3.5 py-2.5 text-xs font-medium border-b-2 whitespace-nowrap transition -mb-px flex items-center gap-1.5 ${
                                 isActive
-                                    ? "border-indigo-500 text-indigo-300 font-bold bg-slate-900"
-                                    : "border-transparent text-slate-400 hover:text-white"
+                                    ? "border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50"
+                                    : "border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                             }`}
                         >
-                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`} />
+                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
                             <span>{tab.label}</span>
                             {tab.count !== null && (
-                                <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-800 text-slate-300 rounded-full border border-slate-700">
+                                <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded-full border border-slate-200">
                                     {tab.count}
                                 </span>
                             )}
@@ -547,14 +573,23 @@ const WorkspaceDetail = () => {
             </div>
 
             {/* TAB CONTENT */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-b-2xl p-6 sm:p-7 shadow-lg">
+            <div className="bg-white border border-slate-200 rounded-b-xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                {/* TAB 0: REAL-TIME DISCORD-STYLE LAB CHAT */}
+                {activeTab === "chat" && (
+                    <WorkspaceChat
+                        workspaceId={workspace._id}
+                        currentUser={user}
+                        onConvertToTask={handleChatConvertToTask}
+                        onConvertToDecision={handleChatConvertToDecision}
+                    />
+                )}
                 {/* TAB 1: RESEARCH BRIEF */}
                 {activeTab === "brief" && (
                     <div className="space-y-6">
-                        <div className="flex justify-between items-center pb-4 border-b border-slate-800">
+                        <div className="flex justify-between items-center pb-4 border-b border-slate-200">
                             <div>
-                                <h2 className="text-base sm:text-lg font-bold text-white">Structured Research Brief</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Structured Research Brief</h2>
+                                <p className="text-xs text-slate-500 mt-0.5">
                                     Defines the scientific problem, testable hypotheses, and planned deliverables.
                                 </p>
                             </div>
@@ -562,7 +597,7 @@ const WorkspaceDetail = () => {
                                 <Button
                                     onClick={() => setIsEditingBrief(true)}
                                     variant="outline"
-                                    className="bg-slate-950 border-slate-800 text-slate-300 hover:text-white text-xs h-8 flex items-center gap-1.5"
+                                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8 flex items-center gap-1.5"
                                 >
                                     <Edit3 className="w-3.5 h-3.5" />
                                     <span>Edit Brief</span>
@@ -573,27 +608,27 @@ const WorkspaceDetail = () => {
                         {!isEditingBrief ? (
                             <div className="space-y-6">
                                 <div>
-                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">
+                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
                                         Problem Statement & Context
                                     </h3>
-                                    <div className="bg-slate-950 rounded-xl p-4 border border-slate-800">
-                                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+                                    <div className="bg-slate-50/70 rounded-xl p-4 border border-slate-200">
+                                        <p className="text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
                                             {workspace.brief?.problemStatement || "No problem statement recorded yet. Define the inquiry context."}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">
+                                    <h3 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
                                         Core Objectives & Hypotheses
                                     </h3>
                                     {(!workspace.brief?.objectives || workspace.brief.objectives.length === 0) ? (
-                                        <p className="text-xs text-slate-500 italic">No specific objectives defined yet.</p>
+                                        <p className="text-xs text-slate-400 italic">No specific objectives defined yet.</p>
                                     ) : (
                                         <ul className="space-y-2">
                                             {workspace.brief.objectives.map((obj, i) => (
-                                                <li key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-200 bg-slate-950/70 p-3 rounded-xl border border-slate-800">
-                                                    <Target className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                                                <li key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                                    <Target className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                                                     <span>{obj}</span>
                                                 </li>
                                             ))}
@@ -602,20 +637,20 @@ const WorkspaceDetail = () => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-slate-950 rounded-xl p-4 border border-slate-800">
-                                        <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">
+                                    <div className="bg-slate-50/70 rounded-xl p-4 border border-slate-200">
+                                        <h3 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
                                             Methodology & Apparatus
                                         </h3>
-                                        <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
                                             {workspace.brief?.methodology || "Not documented yet. Detail analytical, experimental, or computational procedures."}
                                         </p>
                                     </div>
 
-                                    <div className="bg-slate-950 rounded-xl p-4 border border-slate-800">
-                                        <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">
+                                    <div className="bg-slate-50/70 rounded-xl p-4 border border-slate-200">
+                                        <h3 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
                                             Target Deliverables & Outputs
                                         </h3>
-                                        <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
                                             {workspace.brief?.expectedOutputs || "e.g. Conference submission, open-source repository, benchmark dataset."}
                                         </p>
                                     </div>
@@ -624,59 +659,59 @@ const WorkspaceDetail = () => {
                         ) : (
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-mono text-slate-300 uppercase mb-1">
+                                    <label className="block text-xs font-mono text-slate-600 uppercase mb-1">
                                         Problem Statement & Context
                                     </label>
                                     <textarea
                                         rows={4}
                                         value={problemStatement}
                                         onChange={(e) => setProblemStatement(e.target.value)}
-                                        className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 focus:border-indigo-500 outline-none"
+                                        className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:border-indigo-500 outline-none"
                                         placeholder="Formulate the core research challenge..."
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-mono text-slate-300 uppercase mb-1">
+                                    <label className="block text-xs font-mono text-slate-600 uppercase mb-1">
                                         Objectives (one per line)
                                     </label>
                                     <textarea
                                         rows={3}
                                         value={objectivesText}
                                         onChange={(e) => setObjectivesText(e.target.value)}
-                                        className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 focus:border-indigo-500 outline-none"
+                                        className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:border-indigo-500 outline-none"
                                         placeholder="Hypothesis 1&#10;Hypothesis 2"
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-mono text-slate-300 uppercase mb-1">Methodology</label>
+                                        <label className="block text-xs font-mono text-slate-600 uppercase mb-1">Methodology</label>
                                         <textarea
                                             rows={3}
                                             value={methodology}
                                             onChange={(e) => setMethodology(e.target.value)}
-                                            className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 focus:border-indigo-500 outline-none"
+                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:border-indigo-500 outline-none"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-mono text-slate-300 uppercase mb-1">Expected Outputs</label>
+                                        <label className="block text-xs font-mono text-slate-600 uppercase mb-1">Expected Outputs</label>
                                         <textarea
                                             rows={3}
                                             value={expectedOutputs}
                                             onChange={(e) => setExpectedOutputs(e.target.value)}
-                                            className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 focus:border-indigo-500 outline-none"
+                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:border-indigo-500 outline-none"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                                <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => setIsEditingBrief(false)}
-                                        className="bg-slate-950 border-slate-800 text-slate-300 text-xs h-8"
+                                        className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8"
                                     >
                                         Cancel
                                     </Button>
@@ -684,7 +719,7 @@ const WorkspaceDetail = () => {
                                         type="button"
                                         onClick={handleSaveBrief}
                                         disabled={briefSaving}
-                                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8 px-4"
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 px-4"
                                     >
                                         {briefSaving ? "Saving..." : "Save Research Brief"}
                                     </Button>
@@ -697,17 +732,17 @@ const WorkspaceDetail = () => {
                 {/* TAB 2: EVIDENCE BOARD */}
                 {activeTab === "evidence" && (
                     <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
                             <div>
-                                <h2 className="text-base sm:text-lg font-bold text-white">Empirical Evidence Board</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Empirical Evidence Board</h2>
+                                <p className="text-xs text-slate-500 mt-0.5">
                                     Track verified observations, benchmark data, and replications backing this lab.
                                 </p>
                             </div>
                             {isMember && (
                                 <Button
                                     onClick={() => setShowEvidenceForm(!showEvidenceForm)}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8 flex items-center gap-1.5"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 flex items-center gap-1.5"
                                 >
                                     <Plus className="w-3.5 h-3.5" />
                                     <span>{showEvidenceForm ? "Cancel" : "Add Evidence Claim"}</span>
@@ -716,13 +751,13 @@ const WorkspaceDetail = () => {
                         </div>
 
                         {showEvidenceForm && isMember && (
-                            <form onSubmit={handleAddEvidence} className="bg-slate-950 rounded-2xl border border-slate-800 p-5 space-y-3">
-                                <h3 className="text-xs sm:text-sm font-bold text-white">Record Evidence or Research Observation</h3>
+                            <form onSubmit={handleAddEvidence} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3 shadow-2xs">
+                                <h3 className="text-xs sm:text-sm font-bold text-slate-900">Record Evidence or Research Observation</h3>
                                 <Input
                                     placeholder="Claim or finding (e.g. Model inference speed scales linearly with KV-cache quantization)"
                                     value={evidenceClaim}
                                     onChange={(e) => setEvidenceClaim(e.target.value)}
-                                    className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
                                     required
                                 />
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -730,12 +765,12 @@ const WorkspaceDetail = () => {
                                         placeholder="Supporting source / paper DOI / benchmark run"
                                         value={evidenceSource}
                                         onChange={(e) => setEvidenceSource(e.target.value)}
-                                        className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
                                     />
                                     <select
                                         value={evidenceStatus}
                                         onChange={(e) => setEvidenceStatus(e.target.value)}
-                                        className="w-full p-2 bg-slate-900 border border-slate-800 text-slate-200 rounded-lg text-xs outline-none"
+                                        className="w-full p-2 bg-white border border-slate-200 text-slate-800 rounded-lg text-xs outline-none"
                                     >
                                         <option value="hypothesis">Hypothesis (Unverified)</option>
                                         <option value="under_review">Under Review / Replicating</option>
@@ -748,13 +783,13 @@ const WorkspaceDetail = () => {
                                     placeholder="Empirical notes or methodology validation details..."
                                     value={evidenceNotes}
                                     onChange={(e) => setEvidenceNotes(e.target.value)}
-                                    className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 outline-none"
+                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 outline-none"
                                 />
                                 <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowEvidenceForm(false)} className="bg-slate-900 border-slate-800 text-slate-300 text-xs h-8">
+                                    <Button type="button" variant="outline" onClick={() => setShowEvidenceForm(false)} className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8">
                                         Cancel
                                     </Button>
-                                    <Button type="submit" disabled={evidenceSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8">
+                                    <Button type="submit" disabled={evidenceSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8">
                                         {evidenceSubmitting ? "Adding..." : "Log Evidence"}
                                     </Button>
                                 </div>
@@ -762,10 +797,10 @@ const WorkspaceDetail = () => {
                         )}
 
                         {(!workspace.evidence || workspace.evidence.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 p-8">
-                                <FlaskConical className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-white">No evidence claims logged yet</p>
-                                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
+                                <FlaskConical className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
+                                <p className="text-sm font-semibold text-slate-800">No evidence claims logged yet</p>
+                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                                     Pin claims, benchmark results, and citations to establish rigorous backing for your research.
                                 </p>
                             </div>
@@ -775,9 +810,9 @@ const WorkspaceDetail = () => {
                                     const config = STATUS_CONFIG[ev.status] || STATUS_CONFIG.hypothesis;
                                     const StatusIcon = config.icon;
                                     return (
-                                        <div key={ev._id} className="bg-slate-950 rounded-xl border border-slate-800 p-5 space-y-3">
+                                        <div key={ev._id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 shadow-2xs">
                                             <div className="flex justify-between items-start gap-2">
-                                                <p className="text-xs sm:text-sm font-bold text-white leading-snug">{ev.claim}</p>
+                                                <p className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{ev.claim}</p>
                                                 <span className={`inline-flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-0.5 rounded-full border shrink-0 ${config.badge}`}>
                                                     <StatusIcon className="w-3 h-3" />
                                                     <span>{config.label.split(' ')[0]}</span>
@@ -785,22 +820,22 @@ const WorkspaceDetail = () => {
                                             </div>
 
                                             {ev.source && (
-                                                <p className="text-xs text-indigo-300 bg-indigo-950/40 p-2 rounded-lg border border-indigo-500/20 font-mono">
+                                                <p className="text-xs text-indigo-700 bg-indigo-50/60 p-2 rounded-lg border border-indigo-100 font-mono">
                                                     Source: {ev.source}
                                                 </p>
                                             )}
 
                                             {ev.notes && (
-                                                <p className="text-xs text-slate-300 leading-relaxed">{ev.notes}</p>
+                                                <p className="text-xs text-slate-600 leading-relaxed">{ev.notes}</p>
                                             )}
 
-                                            <div className="pt-2 border-t border-slate-850 flex justify-between items-center text-[11px] text-slate-400">
+                                            <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-500">
                                                 <span>Added by {ev.addedBy?.name || "Member"}</span>
                                                 {isMember && (
                                                     <select
                                                         value={ev.status}
                                                         onChange={(e) => handleUpdateEvidenceStatus(ev._id, e.target.value)}
-                                                        className="text-[10px] bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-slate-200 cursor-pointer"
+                                                        className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-700 cursor-pointer"
                                                     >
                                                         <option value="hypothesis">Hypothesis</option>
                                                         <option value="under_review">Under Review</option>
@@ -820,17 +855,17 @@ const WorkspaceDetail = () => {
                 {/* TAB 3: DECISION LOG */}
                 {activeTab === "decisions" && (
                     <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
                             <div>
-                                <h2 className="text-base sm:text-lg font-bold text-white">Architectural & Research Decisions</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Architectural & Research Decisions</h2>
+                                <p className="text-xs text-slate-500 mt-0.5">
                                     Preserves technical rationale, rejected alternatives, and consensus history.
                                 </p>
                             </div>
                             {isMember && (
                                 <Button
                                     onClick={() => setShowDecisionForm(!showDecisionForm)}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8 flex items-center gap-1.5"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 flex items-center gap-1.5"
                                 >
                                     <Plus className="w-3.5 h-3.5" />
                                     <span>{showDecisionForm ? "Cancel" : "Record Decision"}</span>
@@ -839,13 +874,13 @@ const WorkspaceDetail = () => {
                         </div>
 
                         {showDecisionForm && isMember && (
-                            <form onSubmit={handleAddDecision} className="bg-slate-950 rounded-2xl border border-slate-800 p-5 space-y-3">
-                                <h3 className="text-xs sm:text-sm font-bold text-white">Record Research Decision</h3>
+                            <form onSubmit={handleAddDecision} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3 shadow-2xs">
+                                <h3 className="text-xs sm:text-sm font-bold text-slate-900">Record Research Decision</h3>
                                 <Input
                                     placeholder="Decision Title (e.g. Adopt ternary weight representations for attention matrices)"
                                     value={decisionTitle}
                                     onChange={(e) => setDecisionTitle(e.target.value)}
-                                    className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
                                     required
                                 />
                                 <textarea
@@ -853,20 +888,20 @@ const WorkspaceDetail = () => {
                                     placeholder="Rationale & scientific justification..."
                                     value={decisionRationale}
                                     onChange={(e) => setDecisionRationale(e.target.value)}
-                                    className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 outline-none"
+                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 outline-none"
                                     required
                                 />
                                 <Input
                                     placeholder="Alternatives evaluated and discarded..."
                                     value={decisionAlternatives}
                                     onChange={(e) => setDecisionAlternatives(e.target.value)}
-                                    className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
                                 />
                                 <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowDecisionForm(false)} className="bg-slate-900 border-slate-800 text-slate-300 text-xs h-8">
+                                    <Button type="button" variant="outline" onClick={() => setShowDecisionForm(false)} className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8">
                                         Cancel
                                     </Button>
-                                    <Button type="submit" disabled={decisionSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8">
+                                    <Button type="submit" disabled={decisionSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8">
                                         {decisionSubmitting ? "Recording..." : "Save Decision"}
                                     </Button>
                                 </div>
@@ -874,26 +909,26 @@ const WorkspaceDetail = () => {
                         )}
 
                         {(!workspace.decisions || workspace.decisions.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 p-8">
-                                <Scale className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-white">No research decisions logged yet</p>
-                                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
+                                <Scale className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
+                                <p className="text-sm font-semibold text-slate-800">No research decisions logged yet</p>
+                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                                     Track methodological choices and consensus so team members know why specific approaches were taken.
                                 </p>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {workspace.decisions.map(dec => (
-                                    <div key={dec._id} className="bg-slate-950 rounded-xl border border-slate-800 p-5 space-y-2">
+                                    <div key={dec._id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-2 shadow-2xs">
                                         <div className="flex justify-between items-start">
-                                            <h4 className="text-xs sm:text-sm font-bold text-white">{dec.title}</h4>
+                                            <h4 className="text-xs sm:text-sm font-bold text-slate-900">{dec.title}</h4>
                                             <span className="text-[10px] font-mono text-slate-500">
                                                 {new Date(dec.createdAt).toLocaleDateString()}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-slate-300 leading-relaxed">{dec.rationale}</p>
+                                        <p className="text-xs text-slate-700 leading-relaxed">{dec.rationale}</p>
                                         {dec.alternatives && (
-                                            <p className="text-xs text-slate-400 border-t border-slate-850 pt-2 font-mono text-[11px]">
+                                            <p className="text-xs text-slate-500 border-t border-slate-100 pt-2 font-mono text-[11px]">
                                                 Alternatives considered: {dec.alternatives}
                                             </p>
                                         )}
@@ -924,22 +959,22 @@ const WorkspaceDetail = () => {
                 {/* TAB 4: LITERATURE REFERENCES */}
                 {activeTab === "references" && (
                     <div className="space-y-5">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
                             <div>
-                                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                                    <BookOpen className="w-5 h-5 text-indigo-400" />
+                                <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                                    <BookOpen className="w-5 h-5 text-indigo-600" />
                                     <span>Literature & Bibliography</span>
                                 </h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <p className="text-xs text-slate-500 mt-0.5">
                                     Connected academic publications, DOIs, OpenAlex papers, and synced Zotero references.
                                 </p>
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <Link
                                     to={`/discovery?workspaceId=${workspace._id}`}
-                                    className="bg-slate-900 border border-slate-800 hover:bg-slate-800 text-indigo-300 text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 transition"
+                                    className="bg-white border border-slate-200 hover:bg-slate-50 text-indigo-700 text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 transition shadow-2xs font-medium"
                                 >
-                                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                                     <span>Search OpenAlex</span>
                                 </Link>
                                 {isMember && (
@@ -947,9 +982,9 @@ const WorkspaceDetail = () => {
                                         type="button"
                                         variant="outline"
                                         onClick={() => setShowZoteroModal(true)}
-                                        className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-rose-300 text-xs h-8 px-3 flex items-center gap-1.5"
+                                        className="bg-white border-slate-200 hover:bg-slate-50 text-rose-700 text-xs h-8 px-3 flex items-center gap-1.5 font-medium"
                                     >
-                                        <Library className="w-3.5 h-3.5 text-rose-400" />
+                                        <Library className="w-3.5 h-3.5 text-rose-600" />
                                         <span>Sync Zotero</span>
                                     </Button>
                                 )}
@@ -960,10 +995,10 @@ const WorkspaceDetail = () => {
                                             variant="outline"
                                             onClick={() => handleExportBibliography("bibtex")}
                                             disabled={exportingBib}
-                                            className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-slate-300 text-xs h-8 px-2.5 flex items-center gap-1"
+                                            className="bg-white border-slate-200 hover:bg-slate-50 text-slate-700 text-xs h-8 px-2.5 flex items-center gap-1"
                                             title="Export BibTeX (.bib) file"
                                         >
-                                            <Download className="w-3 h-3 text-indigo-400" />
+                                            <Download className="w-3 h-3 text-indigo-600" />
                                             <span>.bib</span>
                                         </Button>
                                         <Button
@@ -971,10 +1006,10 @@ const WorkspaceDetail = () => {
                                             variant="outline"
                                             onClick={() => handleExportBibliography("ris")}
                                             disabled={exportingBib}
-                                            className="bg-slate-900 border-slate-800 hover:bg-slate-800 text-slate-300 text-xs h-8 px-2.5 flex items-center gap-1"
+                                            className="bg-white border-slate-200 hover:bg-slate-50 text-slate-700 text-xs h-8 px-2.5 flex items-center gap-1"
                                             title="Export RIS (.ris) file"
                                         >
-                                            <Download className="w-3 h-3 text-purple-400" />
+                                            <Download className="w-3 h-3 text-purple-600" />
                                             <span>.ris</span>
                                         </Button>
                                     </>
@@ -982,7 +1017,7 @@ const WorkspaceDetail = () => {
                                 {isMember && (
                                     <Button
                                         onClick={() => setShowRefForm(!showRefForm)}
-                                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8 flex items-center gap-1.5"
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 flex items-center gap-1.5"
                                     >
                                         <Plus className="w-3.5 h-3.5" />
                                         <span>{showRefForm ? "Cancel" : "Add Reference"}</span>
@@ -992,13 +1027,13 @@ const WorkspaceDetail = () => {
                         </div>
 
                         {showRefForm && isMember && (
-                            <form onSubmit={handleAddReference} className="bg-slate-950 rounded-2xl border border-slate-800 p-5 space-y-3">
-                                <h3 className="text-xs sm:text-sm font-bold text-white">Add Paper or Citation</h3>
+                            <form onSubmit={handleAddReference} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3 shadow-2xs">
+                                <h3 className="text-xs sm:text-sm font-bold text-slate-900">Add Paper or Citation</h3>
                                 <Input
                                     placeholder="Paper Title (e.g. Attention Is All You Need)"
                                     value={refTitle}
                                     onChange={(e) => setRefTitle(e.target.value)}
-                                    className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
                                     required
                                 />
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1006,26 +1041,26 @@ const WorkspaceDetail = () => {
                                         placeholder="Authors (e.g. Vaswani et al.)"
                                         value={refAuthors}
                                         onChange={(e) => setRefAuthors(e.target.value)}
-                                        className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
                                     />
                                     <Input
                                         placeholder="DOI (e.g. 10.48550/arXiv.1706.03762)"
                                         value={refDoi}
                                         onChange={(e) => setRefDoi(e.target.value)}
-                                        className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm font-mono"
+                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm font-mono"
                                     />
                                     <Input
                                         placeholder="URL / arXiv link"
                                         value={refUrl}
                                         onChange={(e) => setRefUrl(e.target.value)}
-                                        className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm font-mono"
+                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm font-mono"
                                     />
                                 </div>
                                 <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowRefForm(false)} className="bg-slate-900 border-slate-800 text-slate-300 text-xs h-8">
+                                    <Button type="button" variant="outline" onClick={() => setShowRefForm(false)} className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8">
                                         Cancel
                                     </Button>
-                                    <Button type="submit" disabled={refSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8">
+                                    <Button type="submit" disabled={refSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8">
                                         {refSubmitting ? "Adding..." : "Add to Library"}
                                     </Button>
                                 </div>
@@ -1033,22 +1068,22 @@ const WorkspaceDetail = () => {
                         )}
 
                         {(!workspace.references || workspace.references.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 p-8">
-                                <BookOpen className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-white">No bibliography added yet</p>
-                                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
+                                <BookOpen className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
+                                <p className="text-sm font-semibold text-slate-800">No bibliography added yet</p>
+                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                                     Attach key papers, prior art, and reference materials for team literature review.
                                 </p>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {workspace.references.map(ref => (
-                                    <div key={ref._id} className="bg-slate-950 rounded-xl border border-slate-800 p-4 flex items-start justify-between gap-4">
+                                    <div key={ref._id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-start justify-between gap-4 shadow-2xs">
                                         <div>
-                                            <h4 className="text-xs sm:text-sm font-bold text-white">{ref.title}</h4>
-                                            {ref.authors && <p className="text-xs text-slate-400 mt-0.5">{ref.authors}</p>}
+                                            <h4 className="text-xs sm:text-sm font-bold text-slate-900">{ref.title}</h4>
+                                            {ref.authors && <p className="text-xs text-slate-500 mt-0.5">{ref.authors}</p>}
                                             {ref.doi && (
-                                                <span className="inline-block mt-2 font-mono text-[11px] text-indigo-300 bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-500/30">
+                                                <span className="inline-block mt-2 font-mono text-[11px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
                                                     DOI: {ref.doi}
                                                 </span>
                                             )}
@@ -1058,7 +1093,7 @@ const WorkspaceDetail = () => {
                                                 href={ref.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="shrink-0 text-indigo-400 hover:text-indigo-300 flex items-center gap-1 text-xs font-medium"
+                                                className="shrink-0 text-indigo-600 hover:text-indigo-800 flex items-center gap-1 text-xs font-medium"
                                             >
                                                 <span>Paper</span>
                                                 <ExternalLink className="w-3.5 h-3.5" />
@@ -1074,17 +1109,17 @@ const WorkspaceDetail = () => {
                 {/* TAB 5: SCIENTIFIC NOTES */}
                 {activeTab === "notes" && (
                     <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
                             <div>
-                                <h2 className="text-base sm:text-lg font-bold text-white">Scientific Lab Notes</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Scientific Lab Notes</h2>
+                                <p className="text-xs text-slate-500 mt-0.5">
                                     Unstructured observations, experiment scratchpads, and meeting minutes.
                                 </p>
                             </div>
                             {isMember && (
                                 <Button
                                     onClick={() => setShowNoteForm(!showNoteForm)}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8 flex items-center gap-1.5"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8 flex items-center gap-1.5"
                                 >
                                     <Plus className="w-3.5 h-3.5" />
                                     <span>{showNoteForm ? "Cancel" : "Add Note"}</span>
@@ -1093,12 +1128,12 @@ const WorkspaceDetail = () => {
                         </div>
 
                         {showNoteForm && isMember && (
-                            <form onSubmit={handleAddNote} className="bg-slate-950 rounded-2xl border border-slate-800 p-5 space-y-3">
+                            <form onSubmit={handleAddNote} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3 shadow-2xs">
                                 <Input
                                     placeholder="Note Title..."
                                     value={noteTitle}
                                     onChange={(e) => setNoteTitle(e.target.value)}
-                                    className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
                                     required
                                 />
                                 <textarea
@@ -1106,14 +1141,14 @@ const WorkspaceDetail = () => {
                                     placeholder="Write your research findings, formulas, or experiment logs..."
                                     value={noteContent}
                                     onChange={(e) => setNoteContent(e.target.value)}
-                                    className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-100 outline-none"
+                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 outline-none"
                                     required
                                 />
                                 <div className="flex justify-end gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowNoteForm(false)} className="bg-slate-900 border-slate-800 text-slate-300 text-xs h-8">
+                                    <Button type="button" variant="outline" onClick={() => setShowNoteForm(false)} className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-8">
                                         Cancel
                                     </Button>
-                                    <Button type="submit" disabled={noteSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-8">
+                                    <Button type="submit" disabled={noteSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8">
                                         {noteSubmitting ? "Saving..." : "Save Note"}
                                     </Button>
                                 </div>
@@ -1121,20 +1156,20 @@ const WorkspaceDetail = () => {
                         )}
 
                         {(!workspace.notes || workspace.notes.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 p-8">
-                                <StickyNote className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-white">No scientific notes yet</p>
-                                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
+                                <StickyNote className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
+                                <p className="text-sm font-semibold text-slate-800">No scientific notes yet</p>
+                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                                     Create notes to capture insights during team research meetings and experiment runs.
                                 </p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {workspace.notes.map(note => (
-                                    <div key={note._id} className="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-2">
-                                        <h4 className="text-xs sm:text-sm font-bold text-white">{note.title}</h4>
-                                        <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">{note.content}</p>
-                                        <span className="block text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-850">
+                                    <div key={note._id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-2 shadow-2xs">
+                                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">{note.title}</h4>
+                                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{note.content}</p>
+                                        <span className="block text-[10px] font-mono text-slate-400 pt-2 border-t border-slate-100">
                                             {new Date(note.createdAt).toLocaleDateString()}
                                         </span>
                                     </div>
@@ -1147,10 +1182,10 @@ const WorkspaceDetail = () => {
                 {/* TAB 6: MILESTONES & TASKS */}
                 {activeTab === "tasks" && (
                     <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
                             <div>
-                                <h2 className="text-base sm:text-lg font-bold text-white">Research Milestones & Deliverables</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Research Milestones & Deliverables</h2>
+                                <p className="text-xs text-slate-500 mt-0.5">
                                     Execution checklist towards publication, peer review, and benchmark release.
                                 </p>
                             </div>
@@ -1162,10 +1197,10 @@ const WorkspaceDetail = () => {
                                     placeholder="Add research milestone (e.g. Complete 4-bit attention matrix benchmarks on Cortex-M55)..."
                                     value={taskTitle}
                                     onChange={(e) => setTaskTitle(e.target.value)}
-                                    className="bg-slate-950 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                    className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
                                     required
                                 />
-                                <Button type="submit" disabled={taskSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 shrink-0">
+                                <Button type="submit" disabled={taskSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 shrink-0">
                                     <Plus className="w-3.5 h-3.5 mr-1" />
                                     <span>Add Milestone</span>
                                 </Button>
@@ -1173,10 +1208,10 @@ const WorkspaceDetail = () => {
                         )}
 
                         {(!workspace.tasks || workspace.tasks.length === 0) ? (
-                            <div className="text-center py-12 bg-slate-950/60 rounded-2xl border border-dashed border-slate-800 p-8">
-                                <ListTodo className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
-                                <p className="text-sm font-semibold text-white">No milestones scheduled</p>
-                                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                            <div className="text-center py-12 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 p-8">
+                                <ListTodo className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
+                                <p className="text-sm font-semibold text-slate-800">No milestones scheduled</p>
+                                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                                     Break down the research project into verifiable milestones and assign responsibilities.
                                 </p>
                             </div>
@@ -1188,25 +1223,25 @@ const WorkspaceDetail = () => {
                                         <div
                                             key={task._id}
                                             onClick={() => isMember && handleToggleTask(task._id, task.status)}
-                                            className={`p-3 rounded-xl border transition flex items-center justify-between gap-3 ${
-                                                isMember ? 'cursor-pointer hover:border-slate-700' : ''
+                                            className={`p-3 rounded-xl border transition flex items-center justify-between gap-3 shadow-2xs ${
+                                                isMember ? 'cursor-pointer hover:border-slate-300' : ''
                                             } ${
                                                 isCompleted
-                                                    ? 'bg-slate-950/40 border-slate-850 text-slate-500 line-through'
-                                                    : 'bg-slate-950 border-slate-800 text-slate-200'
+                                                    ? 'bg-slate-50/60 border-slate-200 text-slate-400 line-through'
+                                                    : 'bg-white border-slate-200 text-slate-800'
                                             }`}
                                         >
                                             <div className="flex items-center gap-3 min-w-0">
                                                 <div className={`w-5 h-5 rounded-md flex items-center justify-center border shrink-0 ${
                                                     isCompleted
-                                                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                                                        : 'border-slate-700 bg-slate-900'
+                                                        ? 'bg-emerald-50 border-emerald-300 text-emerald-600'
+                                                        : 'border-slate-300 bg-white'
                                                 }`}>
                                                     {isCompleted && <Check className="w-3.5 h-3.5" />}
                                                 </div>
                                                 <span className="text-xs sm:text-sm truncate">{task.title}</span>
                                             </div>
-                                            <span className="text-[10px] font-mono uppercase text-slate-500">
+                                            <span className="text-[10px] font-mono uppercase text-slate-400">
                                                 {task.status}
                                             </span>
                                         </div>
@@ -1220,10 +1255,10 @@ const WorkspaceDetail = () => {
                 {/* TAB 7: TEAM MEMBERS & INVITATIONS */}
                 {activeTab === "members" && (
                     <div className="space-y-5">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+                        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
                             <div>
-                                <h2 className="text-base sm:text-lg font-bold text-white">Collaborating Researchers ({workspace.members?.length || 0})</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <h2 className="text-base sm:text-lg font-bold text-slate-900">Collaborating Researchers ({workspace.members?.length || 0})</h2>
+                                <p className="text-xs text-slate-500 mt-0.5">
                                     Verified scholars with full access to the evidence board and notes.
                                 </p>
                             </div>
@@ -1231,8 +1266,8 @@ const WorkspaceDetail = () => {
 
                         {/* Invite Collaborator Form */}
                         {isMember && (
-                            <form onSubmit={handleInvite} className="bg-slate-950 rounded-2xl border border-slate-800 p-4 space-y-3">
-                                <label className="block text-xs font-mono text-slate-300 uppercase">
+                            <form onSubmit={handleInvite} className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 shadow-2xs">
+                                <label className="block text-xs font-mono text-slate-600 uppercase">
                                     Invite Academic Collaborator by Email
                                 </label>
                                 <div className="flex gap-2">
@@ -1241,16 +1276,16 @@ const WorkspaceDetail = () => {
                                         placeholder="researcher@university.edu"
                                         value={inviteEmail}
                                         onChange={(e) => setInviteEmail(e.target.value)}
-                                        className="bg-slate-900 border-slate-800 text-slate-100 text-xs sm:text-sm"
+                                        className="bg-white border-slate-200 text-slate-900 text-xs sm:text-sm"
                                         required
                                     />
-                                    <Button type="submit" disabled={inviteLoading} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 shrink-0 flex items-center gap-1.5">
+                                    <Button type="submit" disabled={inviteLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 shrink-0 flex items-center gap-1.5">
                                         <UserPlus className="w-3.5 h-3.5" />
                                         <span>{inviteLoading ? "Sending..." : "Send Invitation"}</span>
                                     </Button>
                                 </div>
                                 {inviteSuccess && (
-                                    <p className="text-xs text-emerald-400 flex items-center gap-1">
+                                    <p className="text-xs text-emerald-600 flex items-center gap-1">
                                         <Check className="w-3.5 h-3.5" />
                                         <span>{inviteSuccess}</span>
                                     </p>
@@ -1261,18 +1296,18 @@ const WorkspaceDetail = () => {
                         {/* Members List */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {workspace.members?.map(member => (
-                                <div key={member._id} className="bg-slate-950 rounded-xl border border-slate-800 p-3.5 flex items-center justify-between gap-3">
+                                <div key={member._id} className="bg-white rounded-xl border border-slate-200 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white uppercase font-mono shrink-0">
+                                        <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs font-bold uppercase font-mono shrink-0">
                                             {member.name?.charAt(0) || "U"}
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-xs font-bold text-white truncate">{member.name}</p>
-                                            <p className="text-[10px] text-slate-400 truncate">{member.institution || member.role || "Scholar"}</p>
+                                            <p className="text-xs font-bold text-slate-900 truncate">{member.name}</p>
+                                            <p className="text-[10px] text-slate-500 truncate">{member.institution || member.role || "Scholar"}</p>
                                         </div>
                                     </div>
                                     {(workspace.creator?._id || workspace.creator) === member._id && (
-                                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                                             Lead
                                         </span>
                                     )}
